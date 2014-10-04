@@ -14,6 +14,10 @@ cdef class PreshMap:
         self.c_map = <MapStruct*>self.mem.alloc(1, sizeof(MapStruct))
         map_init(self.mem, self.c_map, initial_size)
 
+    property length:
+        def __get__(self):
+            return self.c_map.length
+
     def __getitem__(self, key_t key):
         assert key != 0
         cdef void* value = map_get(self.c_map, key)
