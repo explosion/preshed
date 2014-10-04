@@ -1,3 +1,7 @@
+preshed/.maps.pxd.swm
+*.swk
+*.swn
+*.swm
 *.so
 *.pyc
 *.swp
