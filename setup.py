@@ -10,7 +10,8 @@ from os.path import splitext
 
 from distutils.sysconfig import get_python_inc
 
-exts = [Extension("preshed.maps", ["preshed/maps.pyx"])]
+exts = [Extension("preshed.maps", ["preshed/maps.pyx"]),
+        Extension("preshed.tries", ["preshed/tries.pyx"])]
 
 setup(
     ext_modules=cythonize(exts),
@@ -20,7 +21,7 @@ setup(
     author="Matthew Honnibal",
     author_email="honnibal@gmail.com",
     url="http://github.com/syllog1sm/preshed",
-    package_data={"trustyc": ["*.pxd", "*.pyx", "*.c"]},
+    package_data={"preshed": ["*.pxd", "*.pyx", "*.c"]},
     description="""Cython hash table that trusts the keys are pre-hashed""",
     classifiers=[
                 'Environment :: Console',
