@@ -3,14 +3,10 @@ from libc.stdint cimport uint64_t
 
 #from thinc.features cimport feat_t
 from cymem.cymem cimport Pool
-from cpython cimport array
 
 
 ctypedef uint32_t idx_t
 ctypedef uint32_t feat_t
-
-
-cpdef feat_t[:] array_from_tuple(tuple t)
 
 
 cdef struct Node:

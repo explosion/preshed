@@ -1,12 +1,6 @@
-from cpython cimport array
-from array import array
 from libc.string cimport memcpy
-from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
-cpdef feat_t[:] array_from_tuple(tuple t):
-    cdef size_t length = len(t)
-    cdef array.array a = array('I', t)
-    return a
+from cymem.cymem cimport Address
 
 
 cdef class SequenceIndex:
@@ -26,14 +20,12 @@ cdef class SequenceIndex:
             len(feature)
         except TypeError:
             feature = (feature,)
-        cdef array.array a = array('I', feature)
-        cdef feat_t[:] feat_array = a
-        return self.get(&(feat_array[0]), len(feature))
+        cdef Address mem = array_from_seq(feature)
+        return self.get(<feat_t*>mem.ptr, len(feature))
 
     def __call__(self, *feature):
-        cdef array.array a = array('I', feature)
-        cdef feat_t[:] feat_array = a
-        return self.index(&(feat_array[0]), len(feature))
+        cdef Address mem = array_from_seq(feature)
+        return self.index(<feat_t*>mem.ptr, len(feature))
 
     cdef idx_t get(self, feat_t* feature, size_t n) except *:
         cdef Node* node = self.tree
@@ -73,6 +65,37 @@ cdef class SequenceIndex:
             node.value = self.i
             self.i += 1
         return node.value
+
+    def revalue(self, list new_values):
+        assert len(new_values) == self.i
+        cdef Address table_mem = array_from_seq(new_values)
+        cdef feat_t* table = <feat_t*>table_mem.ptr
+        cdef Address stack_mem = Address(self.i, sizeof(Node*))
+        stack = <Node**>stack_mem.ptr
+        stack[0] = self.tree
+        cdef int i = 1
+        cdef Node* node
+        while i != 0:
+            i -= 1
+            # Pop a node from the stack
+            node = stack[i]
+            # Replace value
+            node.value = table[node.value]
+            # Push the children onto the stack
+            for j in range(node.length):
+                stack[i] = &node.nodes[j]; i += 1
+                # Should not be possible to have more nodes than in total trie
+                assert i < self.i
+
+
+cdef Address array_from_seq(object seq):
+    cdef Address mem = Address(len(seq), sizeof(feat_t))
+    array = <feat_t*>mem.ptr
+    cdef int i
+    cdef feat_t f
+    for i, f in enumerate(seq):
+        array[i] = f
+    return mem
 
 
 cdef Node* array_prepend(Pool mem, Node* old, size_t length, size_t to_add) except NULL:
