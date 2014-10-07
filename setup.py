@@ -2,16 +2,29 @@
 from distutils.core import setup
 from Cython.Build import cythonize
 from Cython.Distutils import Extension
+from glob import glob
 
 
 import sys
 import os
+from os import path
 from os.path import splitext
 
 from distutils.sysconfig import get_python_inc
 
-exts = [Extension("preshed.maps", ["preshed/maps.pyx"]),
-        Extension("preshed.tries", ["preshed/tries.pyx"])]
+virtual_env = os.environ.get('VIRTUAL_ENV', '')
+
+includes = []
+
+if 'VIRTUAL_ENV' in os.environ:
+    includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', 'site', '*'))
+else:
+    # If you're not using virtualenv, set your include dir here.
+    pass
+
+
+exts = [Extension("preshed.maps", ["preshed/maps.pyx"], include_dirs=includes),
+        Extension("preshed.tries", ["preshed/tries.pyx"], include_dirs=includes)]
 
 setup(
     ext_modules=cythonize(exts),

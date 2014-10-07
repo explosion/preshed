@@ -1,6 +1,12 @@
 from libc.string cimport memcpy
 
+from murmurhash.mrmr cimport hash64
 from cymem.cymem cimport Address
+
+from .maps cimport map_init, map_get, map_set
+
+
+DEF MAX_TRIE_VALUE = 100000
 
 
 cdef class SequenceIndex:
@@ -10,9 +16,12 @@ cdef class SequenceIndex:
     def __init__(self, idx_t offset=0):
         self.mem = Pool()
         self.tree = <Node*>self.mem.alloc(1, sizeof(Node))
+        self.pmap = <MapStruct*>self.mem.alloc(1, sizeof(MapStruct))
+        map_init(self.mem, self.pmap, 8)
         # Value of 0 set aside for special use by the parent code, whatever that
         # might be.
         self.i = 1 + offset
+        self.longest_node = 0
         assert self.tree.nodes is NULL
 
     def __getitem__(self, feature):
@@ -28,12 +37,17 @@ cdef class SequenceIndex:
         return self.index(<feat_t*>mem.ptr, len(feature))
 
     cdef idx_t get(self, feat_t* feature, size_t n) except *:
-        cdef Node* node = self.tree
+        # First, check we don't have any over-size values
         cdef idx_t i
+        cdef key_t hashed
+        cdef Node* node = self.tree
         cdef feat_t f
         for i in range(n):
             f = feature[i]
-            if node.offset <= f < (node.offset + node.length):
+            if f >= MAX_TRIE_VALUE:
+                hashed = hash64(feature, n * sizeof(feat_t), 0)
+                return <idx_t>map_get(self.pmap, hashed)
+            elif node.offset <= f < (node.offset + node.length):
                 node = &node.nodes[f - node.offset]
             else:
                 return 0
@@ -41,10 +55,17 @@ cdef class SequenceIndex:
 
     cdef idx_t index(self, feat_t* feature, size_t n) except 0:
         assert n >= 1
-        cdef Node* node = self.tree
+        cdef key_t hashed
         cdef idx_t i
+        for i in range(n):
+            if feature[i] >= MAX_TRIE_VALUE:
+                hashed = hash64(feature, n * sizeof(feat_t), 0)
+                map_set(self.mem, self.pmap, hashed, <void*>self.i)
+                self.i += 1
+                return self.i - 1
+
+        cdef Node* node = self.tree
         cdef feat_t f
-        cdef size_t node_addr
         for i in range(n):
             f = feature[i]
             if node.nodes == NULL:
@@ -59,7 +80,8 @@ cdef class SequenceIndex:
             elif f >= (node.length + node.offset):
                 node.length = f - node.offset + 1
                 node.nodes = <Node*>self.mem.realloc(node.nodes, node.length * sizeof(Node))
-            node_addr = <size_t>&(node.nodes[f - node.offset])
+            if node.length > self.longest_node:
+                self.longest_node = node.length
             node = &(node.nodes[f - node.offset])
         if node.value == 0:
             node.value = self.i
@@ -86,6 +108,9 @@ cdef class SequenceIndex:
                 stack[i] = &node.nodes[j]; i += 1
                 # Should not be possible to have more nodes than in total trie
                 assert i < self.i
+        for i in range(self.pmap.length):
+            if self.pmap.cells[i].key != 0:
+                self.pmap.cells[i].value = <void*>table[<feat_t>self.pmap.cells[i].value]
 
 
 cdef Address array_from_seq(object seq):

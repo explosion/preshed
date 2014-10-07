@@ -1,19 +1,11 @@
 import pytest
 
 from preshed.tries import SequenceIndex
-from preshed.tries import array_from_tuple
 
 
 @pytest.fixture
 def tree():
     return SequenceIndex()
-
-
-def test_to_array():
-    a = array_from_tuple((6, 2, 5, 7))
-    assert len(a) == 4
-    assert a[2] == 5
-    assert a[3] == 7
 
 
 def test_len1(tree):
@@ -55,3 +47,23 @@ def test_len2(tree):
     assert tree[(1, 0)] == 3
     assert tree[(1, 1)] == 4
     assert tree[(0,)] == 5
+
+
+def test_revalue(tree):
+    tree(0, 1)
+    tree(1, 0)
+    tree(0)
+    new_values = [0, 10, 30, 20]
+    tree.revalue(new_values)
+    assert tree[0] == 20
+    assert tree[(0, 1)] == 10
+    assert tree[(1, 0)] == 30
+
+
+def test_hash_backoff(tree):
+    assert tree(1, 0, 0, 1000000) == 1
+    assert tree.longest_node == 0
+    assert tree(1, 0) == 2
+    assert tree(1, 5) == 3
+    assert tree(1, 10) == 4
+    assert tree.longest_node == 11

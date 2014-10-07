@@ -20,6 +20,7 @@ cdef void* map_get(MapStruct* map_, key_t key) nogil
 
 cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *
 
+cdef void map_init(Pool mem, MapStruct* pmap, size_t length) except *
 
 cdef class PreshMap:
     cdef MapStruct* c_map
