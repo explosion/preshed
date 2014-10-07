@@ -13,12 +13,12 @@ cdef class SequenceIndex:
     """Map numeric arrays to sequential unsigned integers, starting from 1. 0
     indicates that the array was not found.
     """
-    def __init__(self):
+    def __init__(self, idx_t offset=0):
         self.mem = Pool()
         self.tree = <Node*>self.mem.alloc(1, sizeof(Node))
         # Value of 0 set aside for special use by the parent code, whatever that
         # might be.
-        self.i = 1
+        self.i = 1 + offset
         assert self.tree.nodes is NULL
 
     def __getitem__(self, feature):
@@ -28,14 +28,14 @@ cdef class SequenceIndex:
             feature = (feature,)
         cdef array.array a = array('I', feature)
         cdef feat_t[:] feat_array = a
-        return self.get(feat_array, len(feature))
+        return self.get(&(feat_array[0]), len(feature))
 
     def __call__(self, *feature):
         cdef array.array a = array('I', feature)
         cdef feat_t[:] feat_array = a
-        return self.index(feat_array, len(feature))
+        return self.index(&(feat_array[0]), len(feature))
 
-    cdef idx_t get(self, feat_t[:] feature, size_t n) except *:
+    cdef idx_t get(self, feat_t* feature, size_t n) except *:
         cdef Node* node = self.tree
         cdef idx_t i
         cdef feat_t f
@@ -47,10 +47,12 @@ cdef class SequenceIndex:
                 return 0
         return node.value
 
-    cdef idx_t index(self, feat_t[:] feature, size_t n) except 0:
+    cdef idx_t index(self, feat_t* feature, size_t n) except 0:
+        assert n >= 1
         cdef Node* node = self.tree
         cdef idx_t i
         cdef feat_t f
+        cdef size_t node_addr
         for i in range(n):
             f = feature[i]
             if node.nodes == NULL:
@@ -65,6 +67,7 @@ cdef class SequenceIndex:
             elif f >= (node.length + node.offset):
                 node.length = f - node.offset + 1
                 node.nodes = <Node*>self.mem.realloc(node.nodes, node.length * sizeof(Node))
+            node_addr = <size_t>&(node.nodes[f - node.offset])
             node = &(node.nodes[f - node.offset])
         if node.value == 0:
             node.value = self.i
