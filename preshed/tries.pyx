@@ -92,25 +92,80 @@ cdef class SequenceIndex:
         assert len(new_values) == self.i
         cdef Address table_mem = array_from_seq(new_values)
         cdef feat_t* table = <feat_t*>table_mem.ptr
-        cdef Address stack_mem = Address(self.i, sizeof(Node*))
-        stack = <Node**>stack_mem.ptr
-        stack[0] = self.tree
-        cdef int i = 1
+        cdef NodeIterator nodes = NodeIterator(self)
+        cdef size_t addr
         cdef Node* node
-        while i != 0:
-            i -= 1
-            # Pop a node from the stack
-            node = stack[i]
-            # Replace value
-            node.value = table[node.value]
-            # Push the children onto the stack
-            for j in range(node.length):
-                stack[i] = &node.nodes[j]; i += 1
-                # Should not be possible to have more nodes than in total trie
-                assert i < self.i
+        print 'revalue'
+        for _ in nodes:
+            nodes.node.value = table[nodes.node.value]
         for i in range(self.pmap.length):
             if self.pmap.cells[i].key != 0:
                 self.pmap.cells[i].value = <void*>table[<feat_t>self.pmap.cells[i].value]
+
+    def dump(self, file_):
+        for i in range(self.pmap.length):
+            if self.pmap.cells[i].key != 0:
+                file_.write(_fmt_line(<idx_t>self.pmap.cells[i].value,
+                                      [self.pamp.cells[i].key]))
+        for address, value in NodeIterator(self):
+            file_.write(_fmt_line(value, address))
+
+    def load(self, file_):
+        for line in file_:
+            value, address = _parse_line(line)
+            self.i = value
+            self(address)
+
+
+def _fmt_line(value, address):
+    return b'%d\t%s\n' % (value, b'\t'.join(str(a) for a in address))
+
+def _parse_line(line):
+    pieces = [int(f) for f in line.split()]
+    return pieces[1], pieces[1:]
+
+
+cdef class NodeIterator:
+    cdef Pool mem
+    cdef Node* node
+    cdef Node** stack
+    cdef size_t* offsets
+    cdef idx_t i
+    def __init__(self, SequenceIndex trie):
+        self.mem = Pool()
+        self.stack = <Node**>self.mem.alloc(trie.i, sizeof(Node*))
+        self.offsets = <size_t*>self.mem.alloc(trie.i, sizeof(size_t))
+        self.stack[0] = trie.tree
+        self.i = 1
+
+    def __iter__(self):
+        """Iterate over the keys and values in the trie.
+        """
+        cdef Node* node
+        cdef Node* parent
+        cdef size_t i
+        while self.i != 0:
+            self.i -= 1
+            node = self.stack[self.i]
+            key = []
+            i = self.i
+            # In parallel to the stack, we note the offset of the node's parent in
+            # the stack, so that we can always find the parent of stack-node i at
+            # self.stack[i - self.offsets[i]].
+            while i != 0:
+                parent = self.stack[i - self.offsets[i]]
+                key.insert(0, parent.offset + self.offsets[i])
+                if self.offsets[i] == 0:
+                    i -= 1
+                else:
+                    i -= self.offsets[i]
+            # Push the children onto the stack
+            for i in range(node.length):
+                self.stack[self.i] = &node.nodes[i]
+                self.offsets[self.i] = i    
+                self.i += 1
+            self.node = node
+            yield key, node.value
 
 
 cdef Address array_from_seq(object seq):
