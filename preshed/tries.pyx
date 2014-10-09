@@ -1,10 +1,12 @@
+import ujson
+
 from libc.string cimport memcpy
 
 from murmurhash.mrmr cimport hash64
 from cymem.cymem cimport Address
 
 from .maps cimport map_init, map_get, map_set
-import ujson
+
 
 DEF MAX_TRIE_VALUE = 100000
 
@@ -121,11 +123,10 @@ cdef class SequenceIndex:
 
 
 def _fmt_line(value, address):
-    return ujson.dumps([value, [address]])
+    return ujson.dumps((value, (address,)))
 
 def _parse_line(line):
     return ujson.loads(line)
-
 
 
 cdef class NodeIterator:

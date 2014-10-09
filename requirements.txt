@@ -2,3 +2,4 @@ cython
 cymem
 pytest
 murmurhash
+ujson
