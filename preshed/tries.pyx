@@ -4,7 +4,7 @@ from murmurhash.mrmr cimport hash64
 from cymem.cymem cimport Address
 
 from .maps cimport map_init, map_get, map_set
-
+import ujson
 
 DEF MAX_TRIE_VALUE = 100000
 
@@ -95,7 +95,6 @@ cdef class SequenceIndex:
         cdef NodeIterator nodes = NodeIterator(self)
         cdef size_t addr
         cdef Node* node
-        print 'revalue'
         for _ in nodes:
             nodes.node.value = table[nodes.node.value]
         for i in range(self.pmap.length):
@@ -106,23 +105,27 @@ cdef class SequenceIndex:
         for i in range(self.pmap.length):
             if self.pmap.cells[i].key != 0:
                 file_.write(_fmt_line(<idx_t>self.pmap.cells[i].value,
-                                      [self.pamp.cells[i].key]))
+                                      [self.pmap.cells[i].key]))
         for address, value in NodeIterator(self):
+            if value == 0:
+                continue
             file_.write(_fmt_line(value, address))
 
     def load(self, file_):
         for line in file_:
             value, address = _parse_line(line)
+            if not address:
+                continue
             self.i = value
-            self(address)
+            self(*address)
 
 
 def _fmt_line(value, address):
-    return b'%d\t%s\n' % (value, b'\t'.join(str(a) for a in address))
+    return ujson.dumps([value, [address]])
 
 def _parse_line(line):
-    pieces = [int(f) for f in line.split()]
-    return pieces[1], pieces[1:]
+    return ujson.loads(line)
+
 
 
 cdef class NodeIterator:
