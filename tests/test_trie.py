@@ -69,9 +69,3 @@ def test_hash_backoff(tree):
     assert tree(1, 5) == 3
     assert tree(1, 10) == 4
     assert tree.longest_node == 11
-
-
-def test_fmt_line():
-    assert _fmt_line(15, [10]) == b'15\t10\n'
-    assert _fmt_line(15, [10, 1]) == b'15\t10\t1\n'
-    assert _fmt_line(5, [20, 2]) == b'5\t20\t2\n'
