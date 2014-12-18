@@ -1,3 +1,5 @@
+cimport cython
+
 from libc.stdint cimport uint64_t
 from cymem.cymem cimport Pool
 
@@ -16,7 +18,18 @@ cdef struct MapStruct:
     Cell* cells
 
 
-cdef void* map_get(MapStruct* map_, key_t key) nogil
+@cython.cdivision
+cdef inline Cell* _find_cell(const Cell* cells, const size_t size, const key_t key) nogil:
+    # Modulo for powers-of-two via bitwise &
+    cdef size_t i = (key & (size - 1))
+    while cells[i].key != 0 and cells[i].key != key:
+        i = (i + 1) & (size - 1)
+    return &cells[i]
+
+cdef inline void* map_get(const MapStruct* map_, const key_t key) nogil:
+    cdef Cell* cell = _find_cell(map_.cells, map_.length, key)
+    return cell.value
+
 
 cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *
 

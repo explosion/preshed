@@ -1,5 +1,4 @@
 # cython: profile=True
-cimport cython
 
 
 cdef class PreshMap:
@@ -58,11 +57,6 @@ cdef void map_init(Pool mem, MapStruct* map_, size_t length) except *:
     map_.cells = <Cell*>mem.alloc(length, sizeof(Cell))
 
 
-cdef void* map_get(MapStruct* map_, key_t key) nogil:
-    cdef Cell* cell = _find_cell(map_.cells, map_.length, key)
-    return cell.value
-
-
 cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *:
     cdef Cell* cell
     cell = _find_cell(map_.cells, map_.length, key)
@@ -92,10 +86,3 @@ cdef void _resize(Pool mem, MapStruct* map_) except *:
     mem.free(old_cells)
 
 
-@cython.cdivision
-cdef inline Cell* _find_cell(Cell* cells, size_t size, key_t key) nogil:
-    # Modulo for powers-of-two via bitwise &
-    cdef size_t i = (key & (size - 1))
-    while cells[i].key != 0 and cells[i].key != key:
-        i = (i + 1) & (size - 1)
-    return &cells[i]
