@@ -24,7 +24,8 @@ else:
 
 
 exts = [Extension("preshed.maps", ["preshed/maps.pyx"], include_dirs=includes),
-        Extension("preshed.tries", ["preshed/tries.pyx"], include_dirs=includes)]
+        Extension("preshed.tries", ["preshed/tries.pyx"], include_dirs=includes),
+        Extension("preshed.counter", ["preshed/counter.pyx"], include_dirs=includes)]
 
 setup(
     ext_modules=cythonize(exts),
