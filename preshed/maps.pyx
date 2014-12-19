@@ -26,13 +26,26 @@ cdef class PreshMap:
         def __get__(self):
             return self.c_map.length
 
+    def items(self):
+        cdef key_t key
+        cdef void* value
+        cdef int i
+        while map_iter(self.c_map, &i, &key, &value):
+            yield key, <size_t>value
+
+    def keys(self):
+        for key, _ in self.items():
+            yield key
+
+    def values(self):
+        for _, value in self.items():
+            yield value
+
     def __getitem__(self, key_t key):
-        assert key != 0
         cdef void* value = map_get(self.c_map, key)
         return <size_t>value if value != NULL else None
 
     def __setitem__(self, key_t key, size_t value):
-        assert key != 0 and value != 0
         map_set(self.mem, self.c_map, key, <void*>value)
 
     cdef inline void* get(self, key_t key) nogil:
@@ -90,6 +103,34 @@ cdef void* map_get(const MapStruct* map_, const key_t key) nogil:
         return map_.value_for_del_key
     cdef Cell* cell = _find_cell(map_.cells, map_.length, key)
     return cell.value
+
+
+cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) nogil:
+    '''Iterate over the filled items, setting the current place in i, and the
+    key and value.  Return False when iteration finishes.
+    '''
+    cdef const Cell* cell
+    while i[0] < map_.length:
+        cell = &map_.cells[i[0]]
+        i[0] += 1
+        if cell[0].key != EMPTY_KEY and cell[0].key != DELETED_KEY:
+            key[0] = cell[0].key
+            value[0] = cell[0].value
+            return True
+    # Remember to check for cells keyed by the special empty and deleted keys
+    if i[0] == map_.length:
+        i[0] += 1
+        if map_.is_empty_key_set:
+            key[0] = EMPTY_KEY
+            value[0] = map_.value_for_empty_key
+            return True
+    if i[0] == map_.length + 1:
+        i[0] += 1
+        if map_.is_del_key_set:
+            key[0] = DELETED_KEY
+            value[0] = map_.value_for_del_key
+            return True
+    return False
 
 
 @cython.cdivision

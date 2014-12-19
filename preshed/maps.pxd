@@ -26,6 +26,9 @@ cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *
 
 cdef void map_init(Pool mem, MapStruct* pmap, size_t length) except *
 
+cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) nogil
+
+
 cdef class PreshMap:
     cdef MapStruct* c_map
     cdef Pool mem
