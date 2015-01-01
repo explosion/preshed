@@ -5,6 +5,7 @@ cimport cython
 DEF EMPTY_KEY = 0
 DEF DELETED_KEY = 1
 
+
 cdef class PreshMap:
     """Hash map that assumes keys come pre-hashed. Uses open addressing with
     linear probing.
@@ -157,5 +158,3 @@ cdef void _resize(Pool mem, MapStruct* map_) except *:
         if old_cells[i].key != EMPTY_KEY and old_cells[i].key != DELETED_KEY:
             map_set(mem, map_, old_cells[i].key, old_cells[i].value)
     mem.free(old_cells)
-
-
