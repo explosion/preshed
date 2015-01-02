@@ -93,7 +93,7 @@ cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *:
         cell.key = key
         map_.filled += 1
     cell.value = value
-    if (map_.filled + 1) * 4 >= (map_.length * 3):
+    if (map_.filled + 1) * 5 >= (map_.length * 3):
         _resize(mem, map_)
 
 
@@ -135,9 +135,9 @@ cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) nogi
 
 
 @cython.cdivision
-cdef inline Cell* _find_cell(const Cell* cells, const size_t size, const key_t key) nogil:
+cdef inline Cell* _find_cell(Cell* cells, const key_t size, const key_t key) nogil:
     # Modulo for powers-of-two via bitwise &
-    cdef size_t i = (key & (size - 1))
+    cdef key_t i = (key & (size - 1))
     while cells[i].key != 0 and cells[i].key != key:
         i = (i + 1) & (size - 1)
     return &cells[i]
