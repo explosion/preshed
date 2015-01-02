@@ -54,7 +54,7 @@ setup(
     ext_modules=cythonize(exts),
     name="preshed",
     packages=["preshed"],
-    version="0.21",
+    version="0.22",
     author="Matthew Honnibal",
     author_email="honnibal@gmail.com",
     url="http://github.com/syllog1sm/preshed",
