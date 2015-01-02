@@ -1,4 +1,23 @@
 #!/usr/bin/env python
+import subprocess
+
+# This is what we're down to...
+try:
+    import Cython
+except ImportError:
+    subprocess.call(['pip install cython'], shell=True)
+
+try:
+    import murmurhash
+except ImportError:
+    subprocess.call(['pip install murmurhash'], shell=True)
+
+try:
+    import cymem
+except ImportError:
+    subprocess.call(['pip install cymem'], shell=True)
+
+
 from distutils.core import setup
 from Cython.Build import cythonize
 from Cython.Distutils import Extension
@@ -47,4 +66,5 @@ setup(
                 'Intended Audience :: Science/Research',
                 'Programming Language :: Cython',
                 'Topic :: Scientific/Engineering'],
+    requires=["cymem", "murmurhash"]
 )
