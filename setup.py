@@ -15,7 +15,7 @@ virtual_env = os.environ.get('VIRTUAL_ENV', '')
 includes = []
 
 if 'VIRTUAL_ENV' in os.environ:
-    includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', 'site', '*'))
+    includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', '*'))
 else:
     # If you're not using virtualenv, set your include dir here.
     pass
