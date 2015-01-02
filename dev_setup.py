@@ -1,19 +1,17 @@
 #!/usr/bin/env python
-#from distutils.core import setup
-import subprocess
-from setuptools import setup
+
+from distutils.core import setup
+from Cython.Build import cythonize
+from Cython.Distutils import Extension
 from glob import glob
+
 
 import sys
 import os
 from os import path
 from os.path import splitext
 
-# Hack around lack of way to specify compile-time dependency..
-try:
-    import murmurhash
-except ImportError:
-    subprocess.call(['pip install murmurhash'], shell=True)
+from distutils.sysconfig import get_python_inc
 
 virtual_env = os.environ.get('VIRTUAL_ENV', '')
 
@@ -25,19 +23,17 @@ else:
     # If you're not using virtualenv, set your include dir here.
     pass
 
-from distutils.core import Extension
 
-exts = [Extension("preshed.maps", ["preshed/maps.c"], include_dirs=includes,
-            extra_compile_args=['-O3'], extra_link_args=['-O3']),
-        Extension("preshed.tries", ["preshed/tries.c"], include_dirs=includes,
-            extra_compile_args=['-O3'], extra_link_args=['-O3']),
-        Extension("preshed.counter", ["preshed/counter.c"], include_dirs=includes,
-            extra_compile_args=['-O3'], extra_link_args=['-O3'])
-    ]
-
+exts = [Extension("preshed.maps", ["preshed/maps.pyx"], include_dirs=includes,
+                  extra_compile_args=['-O3'], extra_link_args=['-O3']),
+        Extension("preshed.tries", ["preshed/tries.pyx"], include_dirs=includes,
+                  extra_compile_args=['-O3'], extra_link_args=['-O3']),
+        Extension("preshed.counter", ["preshed/counter.pyx"], include_dirs=includes,
+                  extra_compile_args=['-O3'], extra_link_args=['-O3'])
+       ]
 
 setup(
-    ext_modules=exts,
+    ext_modules=cythonize(exts),
     name="preshed",
     packages=["preshed"],
     version="0.22",
@@ -52,5 +48,5 @@ setup(
                 'Intended Audience :: Science/Research',
                 'Programming Language :: Cython',
                 'Topic :: Scientific/Engineering'],
-    install_requires=["cymem", "murmurhash"]
+    requires=["cymem", "murmurhash"]
 )
