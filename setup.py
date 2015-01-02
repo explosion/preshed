@@ -15,10 +15,19 @@ virtual_env = os.environ.get('VIRTUAL_ENV', '')
 includes = []
 
 if 'VIRTUAL_ENV' in os.environ:
-    includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', '*'))
+    includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', 'site', '*'))
+    # Work around a bug in either virtualenv, or setuptools, or pip...Who even
+    # knows who to blame?
+    if not path.exists(path.join(os.environ['VIRTUAL_ENV'], 'build')):
+        os.mkdir(path.join(os.environ['VIRTUAL_ENV'], 'build'))
 else:
     # If you're not using virtualenv, set your include dir here.
     pass
+
+try:
+    import murmurhash
+except ImportError:
+    subprocess.call(['pip install murmurhash'], shell=True)
 
 from distutils.core import Extension
 
@@ -35,7 +44,7 @@ setup(
     ext_modules=exts,
     name="preshed",
     packages=["preshed"],
-    version="0.22",
+    version="0.25",
     author="Matthew Honnibal",
     author_email="honnibal@gmail.com",
     url="http://github.com/syllog1sm/preshed",
@@ -47,6 +56,6 @@ setup(
                 'Intended Audience :: Science/Research',
                 'Programming Language :: Cython',
                 'Topic :: Scientific/Engineering'],
-    install_requires=["cymem", "murmurhash"],
-    setup_requires=["cymem", "murmurhash"]
+    install_requires=["cymem"],
+    setup_requires=["cymem"]
 )
