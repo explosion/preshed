@@ -1,4 +1,4 @@
-import ujson
+import json
 
 from libc.string cimport memcpy
 
@@ -123,10 +123,10 @@ cdef class SequenceIndex:
 
 
 def _fmt_line(value, address):
-    return ujson.dumps((value, (address,)))
+    return json.dumps((value, (address,)))
 
 def _parse_line(line):
-    return ujson.loads(line)
+    return json.loads(line)
 
 
 cdef class NodeIterator:
