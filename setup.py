@@ -9,11 +9,6 @@ import os
 from os import path
 from os.path import splitext
 
-# Hack around lack of way to specify compile-time dependency..
-try:
-    import murmurhash
-except ImportError:
-    subprocess.call(['pip install murmurhash'], shell=True)
 
 virtual_env = os.environ.get('VIRTUAL_ENV', '')
 
@@ -52,5 +47,6 @@ setup(
                 'Intended Audience :: Science/Research',
                 'Programming Language :: Cython',
                 'Topic :: Scientific/Engineering'],
-    install_requires=["cymem", "murmurhash"]
+    install_requires=["cymem", "murmurhash"],
+    setup_requires=["cymem", "murmurhash"]
 )
