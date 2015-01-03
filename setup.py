@@ -57,5 +57,4 @@ setup(
                 'Programming Language :: Cython',
                 'Topic :: Scientific/Engineering'],
     install_requires=["cymem"],
-    setup_requires=["cymem"]
 )
