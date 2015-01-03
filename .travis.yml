@@ -6,6 +6,6 @@ python:
 install:
   pip install -r dev_requirements.txt &&
   python dev_setup.py build_ext --inplace &&
-  ls -lah && ls preshed/
+  export PYTHONPATH=`pwd`
 # command to run tests
 script: "py.test ."
