@@ -16,10 +16,6 @@ includes = []
 
 if 'VIRTUAL_ENV' in os.environ:
     includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', 'site', '*'))
-    # Work around a bug in either virtualenv, or setuptools, or pip...Who even
-    # knows who to blame?
-    if not path.exists(path.join(os.environ['VIRTUAL_ENV'], 'build')):
-        os.mkdir(path.join(os.environ['VIRTUAL_ENV'], 'build'))
 else:
     # If you're not using virtualenv, set your include dir here.
     pass
