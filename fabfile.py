@@ -33,6 +33,7 @@ def setup():
 def install():
     with virtualenv(VENV_DIR):
         local('pip install --upgrade setuptools')
+        local('pip install murmurhash')
         local('pip install dist/*.tar.gz')
         local('pip install pytest')
 
