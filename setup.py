@@ -12,7 +12,7 @@ from os.path import splitext
 
 virtual_env = os.environ.get('VIRTUAL_ENV', '')
 
-includes = []
+includes = ['.']
 
 if 'VIRTUAL_ENV' in os.environ:
     includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', 'site', '*'))
@@ -20,10 +20,6 @@ else:
     # If you're not using virtualenv, set your include dir here.
     pass
 
-try:
-    import murmurhash
-except ImportError:
-    subprocess.call(['pip install murmurhash'], shell=True)
 
 from distutils.core import Extension
 
@@ -40,7 +36,7 @@ setup(
     ext_modules=exts,
     name="preshed",
     packages=["preshed"],
-    version="0.25",
+    version="0.30",
     author="Matthew Honnibal",
     author_email="honnibal@gmail.com",
     url="http://github.com/syllog1sm/preshed",
@@ -52,5 +48,5 @@ setup(
                 'Intended Audience :: Science/Research',
                 'Programming Language :: Cython',
                 'Topic :: Scientific/Engineering'],
-    install_requires=["cymem"],
+    install_requires=["cymem", "murmurhash"],
 )
