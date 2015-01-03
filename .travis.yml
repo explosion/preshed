@@ -6,6 +6,6 @@ python:
 #
 install:
   - "pip install --upgrade setuptools"
-  - "pip install murmurhash preshed"
+  - "pip install preshed"
 # command to run tests
 script: "py.test tests/"
