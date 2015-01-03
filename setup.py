@@ -48,5 +48,5 @@ setup(
                 'Intended Audience :: Science/Research',
                 'Programming Language :: Cython',
                 'Topic :: Scientific/Engineering'],
-    install_requires=["cymem", "murmurhash"],
+    install_requires=["murmurhash", "cymem"],
 )

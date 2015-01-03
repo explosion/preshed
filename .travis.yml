@@ -3,9 +3,9 @@ python:
   - "2.7"
   - "3.4"
 # command to install dependencies
+#
 install:
-  pip install -r dev_requirements.txt &&
-  python dev_setup.py build_ext --inplace &&
-  export PYTHONPATH=`pwd`
+  - "pip install --upgrade setuptools"
+  - "pip install murmurhash preshed"
 # command to run tests
-script: "py.test ."
+script: "py.test tests/"
