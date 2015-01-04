@@ -48,5 +48,5 @@ setup(
 import headers_workaround
 
 
-headers_workaround.fix_venv_pypy()
+headers_workaround.fix_venv_pypy_include()
 headers_workaround.install_headers('murmurhash')
