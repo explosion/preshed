@@ -1,8 +1,8 @@
+*.egg
+*.egg-info
 preshed/.maps.pxd.swm
 preshed/.maps.pyx.swl
-*.swk
-*.swn
-*.swm
+*.sw[a-z]
 *.so
 *.pyc
 *.swp
@@ -11,6 +11,7 @@ preshed/.maps.pyx.swl
 *.c
 *.cpp
 .env/
+.denv
 MANIFEST
 build/
 dist/
