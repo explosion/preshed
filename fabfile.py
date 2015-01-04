@@ -20,9 +20,7 @@ def dev():
         local('pip install cython')
         local('pip install murmurhash')
         local('pip install -r dev_requirements.txt')
-
-
-
+ 
 
 def sdist():
     if file_exists('dist/'):
@@ -61,6 +59,9 @@ def make():
 def clean():
     with lcd(os.path.dirname(__file__)):
         local('python dev_setup.py clean --all')
+    with virtualenv(DEV_ENV_DIR):
+        with lcd(os.path.dirname(__file__)):
+            local('python dev_setup.py clean --all')
 
 def test():
     with virtualenv(VENV_DIR):
