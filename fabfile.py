@@ -33,7 +33,6 @@ def setup():
 def install():
     with virtualenv(VENV_DIR):
         local('pip install --upgrade setuptools')
-        local('pip install murmurhash')
         local('pip install dist/*.tar.gz')
         local('pip install pytest')
 
@@ -51,3 +50,7 @@ def clean():
 def test():
     with virtualenv(VENV_DIR):
         local('py.test -x')
+
+
+def travis():
+    local('open https://travis-ci.org/syllog1sm/preshed')
