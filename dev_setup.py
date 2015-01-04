@@ -13,15 +13,8 @@ from os.path import splitext
 
 from distutils.sysconfig import get_python_inc
 
-virtual_env = os.environ.get('VIRTUAL_ENV', '')
 
-includes = []
-
-if 'VIRTUAL_ENV' in os.environ:
-    includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', 'site', '*'))
-else:
-    # If you're not using virtualenv, set your include dir here.
-    pass
+includes = ['.', path.join(sys.prefix, 'include')]
 
 
 exts = [Extension("preshed.maps", ["preshed/maps.pyx"], include_dirs=includes,

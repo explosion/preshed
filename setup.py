@@ -10,23 +10,7 @@ from os import path
 from os.path import splitext
 
 
-def get_mrmr_headers():
-    return {}
-
-headers = get_mrmr_headers()
-
-
-virtual_env = os.environ.get('VIRTUAL_ENV', '')
-
-includes = ['.']
-
-
-if 'VIRTUAL_ENV' in os.environ:
-    includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', 'site', '*'))
-    includes += glob(path.join(os.environ['VIRTUAL_ENV'], 'include', '*'))
-else:
-    # If you're not using virtualenv, set your include dir here.
-    pass
+includes = ['.', path.join(sys.prefix, 'include')]
 
 
 from distutils.core import Extension
@@ -44,7 +28,7 @@ setup(
     ext_modules=exts,
     name="preshed",
     packages=["preshed"],
-    version="0.32",
+    version="0.34",
     author="Matthew Honnibal",
     author_email="honnibal@gmail.com",
     url="http://github.com/syllog1sm/preshed",
@@ -62,10 +46,6 @@ setup(
 
 
 import headers_workaround
-import sys
 
 
-include_dir = path.join(sys.prefix, 'include', 'site')
-if not path.exists(include_dir):
-    os.mkdir(include_dir)
-headers_workaround.install_headers(include_dir, 'murmurhash')
+headers_workaround.install_headers('murmurhash')

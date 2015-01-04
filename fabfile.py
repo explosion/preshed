@@ -8,6 +8,20 @@ from fabtools.python import virtualenv
 
 PWD = path.dirname(__file__)
 VENV_DIR = path.join(PWD, '.env')
+DEV_ENV_DIR = path.join(PWD, '.denv')
+
+
+def dev():
+    # Allow this to persist, since we aren't as rigorous about keeping state clean
+    if not file_exists('.denv'):
+        local('virtualenv .denv')
+ 
+    with virtualenv(DEV_ENV_DIR):
+        local('pip install cython')
+        local('pip install murmurhash')
+        local('pip install -r dev_requirements.txt')
+
+
 
 
 def sdist():
@@ -27,6 +41,7 @@ def publish():
 def setup():
     if file_exists('.env'):
         local('rm -rf .env')
+    local('rm -rf *.egg')
     local('virtualenv .env')
 
 
@@ -38,7 +53,7 @@ def install():
 
 
 def make():
-    with virtualenv(VENV_DIR):
+    with virtualenv(DEV_ENV_DIR):
         with lcd(path.dirname(__file__)):
             local('python dev_setup.py build_ext --inplace')
 
