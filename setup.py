@@ -29,7 +29,7 @@ def name_to_path(mod_name, ext):
 
 def c_ext(mod_name, is_pypy=False, language="c", compile_args=('-O3',)):
     includes = ['.', path.join(sys.prefix, 'include')]
-    mod_path = name_to_path(mod_name, ext)
+    mod_path = name_to_path(mod_name, language)
     return Extension(mod_name, [mod_path], include_dirs=includes,
                      extra_compile_args=compile_args, extra_link_args=compile_args)
 
