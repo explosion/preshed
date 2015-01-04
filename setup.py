@@ -27,7 +27,7 @@ def name_to_path(mod_name, ext):
     return '%s.%s' % (mod_name.replace('.', '/'), ext)
 
 
-def c_ext(mod_name, is_pypy=False, language="c", compile_args=('-O3',)):
+def c_ext(mod_name, is_pypy=False, language="c", compile_args=['-O3']):
     includes = ['.', path.join(sys.prefix, 'include')]
     mod_path = name_to_path(mod_name, language)
     return Extension(mod_name, [mod_path], include_dirs=includes,
@@ -46,7 +46,7 @@ def run_setup(exts):
         ext_modules=exts,
         name="preshed",
         packages=["preshed"],
-        version="0.35",
+        version="0.36",
         author="Matthew Honnibal",
         author_email="honnibal@gmail.com",
         url="http://github.com/syllog1sm/preshed",
