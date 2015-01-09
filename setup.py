@@ -10,6 +10,28 @@ from os.path import splitext
 
 
 from distutils.core import Extension
+import distutils.sysconfig
+
+
+distutils.sysconfig.get_config_vars()
+
+
+def install_headers():
+    dest_dir = path.join(sys.prefix, 'include', 'murmurhash')
+    if not path.exists(dest_dir):
+        shutil.copytree('murmurhash/headers/murmurhash', dest_dir)
+
+def rm_cflag(text):
+    cflags = distutils.sysconfig._config_vars['CFLAGS']
+    cflags = cflags.replace(text, '')
+    distutils.sysconfig._config_vars['CFLAGS'] = cflags
+
+install_headers()
+includes = ['.', path.join(sys.prefix, 'include')]
+
+rm_cflag('-fno-strict-aliasing')
+rm_cflag('-Wstrict-prototypes')
+rm_cflag('-NDEBUG')
 
 
 def clean(ext):
