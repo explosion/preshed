@@ -102,7 +102,7 @@ def main(modules, is_pypy):
     run_setup(exts)
 
 
-MOD_NAMES = ['preshed.maps', 'preshed.counter', 'preshed.tries']
+MOD_NAMES = ['preshed.maps', 'preshed.counter']
 
 if __name__ == '__main__':
     use_cython = sys.argv[1] == 'build_ext'
