@@ -27,18 +27,21 @@ def name_to_path(mod_name, ext):
     return '%s.%s' % (mod_name.replace('.', '/'), ext)
 
 
-def c_ext(mod_name, is_pypy=False, language="c", compile_args=['-O3']):
-    includes = ['.', path.join(sys.prefix, 'include')]
+def c_ext(mod_name, language, includes, compile_args):
     mod_path = name_to_path(mod_name, language)
     return Extension(mod_name, [mod_path], include_dirs=includes,
                      extra_compile_args=compile_args, extra_link_args=compile_args)
 
 
-def cython_ext(mod_name, language="c"):
+def cython_ext(mod_name, language, includes, compile_args):
     import Cython.Distutils
     import Cython.Build
     mod_path = mod_name.replace('.', '/') + '.pyx'
-    return Cython.Build.cythonize(mod_path, language=language)[0]
+    if language == 'cpp':
+        language = 'c++'
+    ext = Extension(mod_name, [mod_path], language=language, include_dirs=includes,
+                    extra_compile_args=compile_args)
+    return Cython.Build.cythonize([ext])[0]
 
 
 def run_setup(exts):
@@ -46,7 +49,7 @@ def run_setup(exts):
         ext_modules=exts,
         name="preshed",
         packages=["preshed"],
-        version="0.36",
+        version="0.37",
         author="Matthew Honnibal",
         author_email="honnibal@gmail.com",
         url="http://github.com/syllog1sm/preshed",
@@ -71,7 +74,9 @@ def run_setup(exts):
 def main(modules, is_pypy):
     language = "c"
     ext_func = cython_ext if use_cython else c_ext
-    exts = [ext_func(mn) for mn in modules]
+    includes = ['.', path.join(sys.prefix, 'include')]
+    compile_args = ['-O3']
+    exts = [ext_func(mn, language, includes, compile_args) for mn in modules]
     run_setup(exts)
 
 
