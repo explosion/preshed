@@ -105,6 +105,13 @@ cdef void* map_get(const MapStruct* map_, const key_t key) nogil:
     return cell.value
 
 
+cdef void* map_bulk_get(const MapStruct* map_, const key_t* keys, void** values,
+                        int n) nogil:
+    cdef int i
+    for i in range(n):
+        values[i] = map_get(map_, keys[i])
+
+
 cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) nogil:
     '''Iterate over the filled items, setting the current place in i, and the
     key and value.  Return False when iteration finishes.

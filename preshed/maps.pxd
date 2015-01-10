@@ -20,6 +20,10 @@ cdef struct MapStruct:
     bint is_del_key_set
 
 
+cdef void* map_bulk_get(const MapStruct* map_, const key_t* keys, void** values,
+                        int n) nogil
+
+
 cdef void* map_get(const MapStruct* map_, const key_t key) nogil
 
 cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *
