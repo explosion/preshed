@@ -71,7 +71,7 @@ def run_setup(exts):
         ext_modules=exts,
         name="preshed",
         packages=["preshed"],
-        version="0.37",
+        version="0.38",
         author="Matthew Honnibal",
         author_email="honnibal@gmail.com",
         url="http://github.com/syllog1sm/preshed",
