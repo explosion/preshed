@@ -13,5 +13,7 @@ ctypedef int64_t count_t
 cdef class PreshCounter:
     cdef Pool mem
     cdef MapStruct* c_map
+    cdef public object smoother
+    cdef readonly count_t total
 
     cpdef int inc(self, key_t key, count_t inc) except -1
