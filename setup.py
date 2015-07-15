@@ -20,7 +20,8 @@ distutils.sysconfig.get_config_vars()
 def rm_cflag(text):
     cflags = distutils.sysconfig._config_vars['CFLAGS']
     cflags = cflags.replace(text, '')
-    distutils.sysconfig._config_vars['CFLAGS'] = cflags
+    if distutils.sysconfig._config_vars:
+        distutils.sysconfig._config_vars['CFLAGS'] = cflags
 
 
 includes = ['.', path.join(sys.prefix, 'include')]
@@ -68,7 +69,7 @@ def run_setup(exts):
         ext_modules=exts,
         name="preshed",
         packages=["preshed"],
-        version="0.39",
+        version="0.40",
         author="Matthew Honnibal",
         author_email="honnibal@gmail.com",
         url="http://github.com/syllog1sm/preshed",
