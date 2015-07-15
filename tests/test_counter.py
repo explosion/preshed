@@ -58,3 +58,24 @@ def test_smooth_prob():
 
     for event, count in reversed(sorted(p, key=lambda it: it[1])):
         assert p.smoother(count) < count
+
+
+import os
+def test_large_freqs():
+    if 'TEST_FILE_LOC' in os.environ:
+        loc = os.environ['TEST_FILE_LOC']
+    else:
+        return None
+    counts = PreshCounter()
+    for i, line in enumerate(open(loc)):
+        line = line.strip()
+        if not line:
+            continue
+        freq = int(line.split()[0])
+        counts.inc(i+1, freq)
+    oov = i+2
+    assert counts.prob(oov) == 0.0
+    assert counts.prob(1) < 0.1
+    counts.smooth()
+    assert counts.prob(oov) > 0
+    assert counts.prob(oov) < counts.prob(i)
