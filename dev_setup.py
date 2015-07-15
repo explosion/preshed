@@ -19,8 +19,6 @@ includes = ['.', path.join(sys.prefix, 'include')]
 
 exts = [Extension("preshed.maps", ["preshed/maps.pyx"], include_dirs=includes,
                   extra_compile_args=['-O3'], extra_link_args=['-O3']),
-        Extension("preshed.tries", ["preshed/tries.pyx"], include_dirs=includes,
-                  extra_compile_args=['-O3'], extra_link_args=['-O3']),
         Extension("preshed.counter", ["preshed/counter.pyx"], include_dirs=includes,
                   extra_compile_args=['-O3'], extra_link_args=['-O3'])
        ]
@@ -29,7 +27,7 @@ setup(
     ext_modules=cythonize(exts),
     name="preshed",
     packages=["preshed"],
-    version="0.22",
+    version="0.38",
     author="Matthew Honnibal",
     author_email="honnibal@gmail.com",
     url="http://github.com/syllog1sm/preshed",
