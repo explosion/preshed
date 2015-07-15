@@ -37,11 +37,12 @@ cdef class PreshCounter:
         self.total += inc
 
     def prob(self, key_t key):
+        cdef GaleSmoother smoother
         cdef void* value = map_get(self.c_map, key)
         if self.smoother is not None:
+            smoother = self.smoother
             r_star = self.smoother(<count_t>value)
-            p_of_zero = self.smoother.p_of_zeros
-            return (1 - p_of_zero) * r_star / self.smoother.total
+            return r_star / self.smoother.total
         elif value == NULL:
             return 0
         else:
@@ -56,8 +57,7 @@ cdef class GaleSmoother:
     cdef count_t* Nr
     cdef double gradient
     cdef double intercept
-    cdef count_t cutoff
-    cdef readonly double p_of_zeros
+    cdef readonly count_t cutoff
     cdef count_t Nr0
     cdef readonly double total
 
@@ -73,11 +73,6 @@ cdef class GaleSmoother:
         # Extrapolate Nr0 from Nr1 and Nr2.
         self.Nr0 = count_counts[1] + (count_counts[1] - count_counts[2])
         self.mem = Pool()
-        # Total mass assigned to unobserved items. Note that this means
-        # the probability assigned to an unseen is less than the
-        # probability assigned to a seen, so long as Nr1 < Nr2.
-        # This is good!
-        self.p_of_zeros = count_counts[1] / total
 
         cdef double[2] mb
 
@@ -96,20 +91,23 @@ cdef class GaleSmoother:
                                            n_counts)
         self.gradient = mb[0]
         self.intercept = mb[1]
-        # If this starts at 1 it aligns s.t. i == r, because we don't need it
-        # once we hit sparse r
-        #self.Nr += 1
-        self.total = 0.0
+        self.total = self(0) * self.Nr0
         for count, count_count in count_counts:
             self.total += self(count) * count_count
 
     def __call__(self, count_t r):
         if r == 0:
-            return self.p_of_zeros / self.Nr0
+            return self.Nr[1] / self.Nr0
         elif r < self.cutoff:
-            return turing_estimate_of_r(r, self.Nr[r], self.Nr[r+1])
+            return turing_estimate_of_r(r, self.Nr[r-1], self.Nr[r])
         else:
             return gale_estimate_of_r(r, self.gradient, self.intercept)
+
+    def count_count(self, count_t r):
+        if r == 0:
+            return self.Nr0
+        else:
+            return self.Nr[r-1]
 
 
 @cython.cdivision(True)
