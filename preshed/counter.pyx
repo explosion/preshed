@@ -71,7 +71,7 @@ cdef class GaleSmoother:
         # won't be true in real data...
         assert count_counts[1] != 0 and count_counts[2] != 0, "Cannot smooth your weird data"
         # Extrapolate Nr0 from Nr1 and Nr2.
-        self.Nr0 = count_counts[1] + (count_counts[2] - count_counts[1])
+        self.Nr0 = count_counts[1] + (count_counts[1] - count_counts[2])
         self.mem = Pool()
         # Total mass assigned to unobserved items. Note that this means
         # the probability assigned to an unseen is less than the
@@ -98,7 +98,7 @@ cdef class GaleSmoother:
         self.intercept = mb[1]
         # If this starts at 1 it aligns s.t. i == r, because we don't need it
         # once we hit sparse r
-        self.Nr += 1
+        #self.Nr += 1
         self.total = 0.0
         for count, count_count in count_counts:
             self.total += self(count) * count_count
