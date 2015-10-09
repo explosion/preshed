@@ -18,8 +18,8 @@ distutils.sysconfig.get_config_vars()
 
 
 def rm_cflag(text):
-    if distutils.sysconfig._config_vars:
-        cflags = distutils.sysconfig._config_vars['CFLAGS']
+    cflags = distutils.sysconfig.get_config_var('CFLAGS')
+    if not cflags is None:
         cflags = cflags.replace(text, '')
         distutils.sysconfig._config_vars['CFLAGS'] = cflags
 
