@@ -69,7 +69,7 @@ def run_setup(exts):
         ext_modules=exts,
         name="preshed",
         packages=["preshed"],
-        version="0.42",
+        version="0.43",
         author="Matthew Honnibal",
         author_email="honnibal@gmail.com",
         url="http://github.com/syllog1sm/preshed",
@@ -81,7 +81,7 @@ def run_setup(exts):
                     'Intended Audience :: Science/Research',
                     'Programming Language :: Cython',
                     'Topic :: Scientific/Engineering'],
-        install_requires=["murmurhash", "cymem"],
+        install_requires=["murmurhash", "cymem == 1.30"],
         setup_requires=["headers_workaround"]
     )
 
