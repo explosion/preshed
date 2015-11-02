@@ -1,4 +1,4 @@
 cython
-cymem
+cymem >= 1.3.0
 pytest
 murmurhash
