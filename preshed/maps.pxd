@@ -14,7 +14,7 @@ cdef struct MapStruct:
     Cell* cells
     void* value_for_empty_key
     void* value_for_del_key
-    key_t length
+    size_t length
     key_t filled
     bint is_empty_key_set
     bint is_del_key_set

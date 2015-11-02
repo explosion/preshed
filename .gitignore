@@ -1,10 +1,12 @@
 *.egg
+*.eggs
 *.egg-info
 preshed/.maps.pxd.swm
 preshed/.maps.pyx.swl
 *.sw[a-z]
 *.so
 *.pyc
+*.pyd
 *.swp
 *.swo
 *.html
@@ -15,3 +17,6 @@ preshed/.maps.pyx.swl
 MANIFEST
 build/
 dist/
+
+*.bat
+*.pdb

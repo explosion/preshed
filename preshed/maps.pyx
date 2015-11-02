@@ -154,9 +154,9 @@ cdef void _resize(Pool mem, MapStruct* map_) except *:
     cdef Cell* old_cells = map_.cells
     cdef size_t old_size = map_.length
 
+    map_.cells = <Cell*>mem.alloc(new_size, sizeof(Cell))
     map_.length = new_size
     map_.filled = 0
-    map_.cells = <Cell*>mem.alloc(new_size, sizeof(Cell))
     
     cdef size_t i
     cdef size_t slot
