@@ -1,4 +1,4 @@
 cython
-cymem
+cymem == 1.30
 pytest
 murmurhash
