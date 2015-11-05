@@ -29,7 +29,7 @@ cdef class PreshMap:
     def items(self):
         cdef key_t key
         cdef void* value
-        cdef int i
+        cdef int i = 0
         while map_iter(self.c_map, &i, &key, &value):
             yield key, <size_t>value
 
