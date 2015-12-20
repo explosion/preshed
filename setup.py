@@ -13,11 +13,6 @@ try:
 except ImportError:
     from distutils.core import Extension, setup
 
-try:
-    from urllib.request import urlretrieve
-except ImportError:
-    from urllib import urlretrieve
-
 
 MAJOR      = 0
 MINOR      = 43
@@ -168,9 +163,6 @@ def prepare_includes(path):
     copy_include(
         os.path.join(os.path.dirname(murmurhash.__file__), 'headers'),
         include_dir, 'murmurhash')
-
-    url = 'https://msinttypes.googlecode.com/svn/trunk/stdint.h'
-    urlretrieve(url, os.path.join(include_dir, 'stdint.h'))
 
 
 def is_source_release(path):
