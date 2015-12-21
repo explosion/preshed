@@ -5,5 +5,3 @@ recursive-include docs/_build/html *
 include README.rst
 include CHANGES.txt
 include LICENSE.txt
-
-recursive-include include *.h
