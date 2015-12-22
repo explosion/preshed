@@ -134,35 +134,6 @@ def generate_cython(root, source):
         raise RuntimeError('Running cythonize failed')
 
 
-def import_include(module_name):
-    try:
-        return __import__(module_name, globals(), locals(), [], 0)
-    except ImportError:
-        raise ImportError('Unable to import %s. Create a virtual environment '
-                          'and install all dependencies from requirements.txt, '
-                          'e.g., run "pip install -r requirements.txt".' % module_name)
-
-
-def copy_include(src, dst, path):
-    assert os.path.isdir(src)
-    assert os.path.isdir(dst)
-    shutil.copytree(
-        os.path.join(src, path),
-        os.path.join(dst, path))
-
-
-def prepare_includes(path):
-    include_dir = os.path.join(path, 'include')
-    if os.path.exists(include_dir):
-        shutil.rmtree(include_dir)
-    os.mkdir(include_dir)
-
-    murmurhash = import_include('murmurhash')
-    copy_include(
-        os.path.join(os.path.dirname(murmurhash.__file__), 'headers'),
-        include_dir, 'murmurhash')
-
-
 def is_source_release(path):
     return os.path.exists(os.path.join(path, 'PKG-INFO'))
 
@@ -210,11 +181,12 @@ def setup_package():
 
         if not is_source_release(root):
             generate_cython(root, 'preshed')
-            prepare_includes(root)
 
         setup(
             name='preshed',
             packages=PACKAGES,
+            package_data={'preshed': ['*.pyx',
+                                      '*.pxd']},
             description='Cython hash table that trusts the keys are pre-hashed',
             author='Matthew Honnibal',
             author_email='matt@spacy.io',
