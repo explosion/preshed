@@ -99,9 +99,9 @@ cdef class GaleSmoother:
         if r == 0:
             return self.Nr[1] / self.Nr0
         elif r < self.cutoff:
-            return turing_estimate_of_r(r, self.Nr[r-1], self.Nr[r])
+            return turing_estimate_of_r(<double>r, <double>self.Nr[r-1], <double>self.Nr[r])
         else:
-            return gale_estimate_of_r(r, self.gradient, self.intercept)
+            return gale_estimate_of_r(<double>r, self.gradient, self.intercept)
 
     def count_count(self, count_t r):
         if r == 0:
@@ -117,8 +117,8 @@ cdef double turing_estimate_of_r(double r, double Nr, double Nr1) except -1:
 
 @cython.cdivision(True)
 cdef double gale_estimate_of_r(double r, double gradient, double intercept) except -1:
-    cdef double e_nr  = exp(gradient * log(<double>r) + intercept)
-    cdef double e_nr1 = exp(gradient * log(<double>r+1) + intercept)
+    cdef double e_nr  = exp(gradient * log(r) + intercept)
+    cdef double e_nr1 = exp(gradient * log(r+1) + intercept)
     return (r + 1) * (e_nr1 / e_nr)
 
 
@@ -182,8 +182,8 @@ cdef count_t _find_when_to_switch(count_t* sorted_r, count_t* Nr, double m, doub
         if sorted_r[i+1] != r+1:
             return r
         g_r = gale_estimate_of_r(r, m, b)
-        t_r = turing_estimate_of_r(r, Nr[i], Nr[i+1])
-        if abs(t_r - g_r) <= _variance(r, Nr[i], Nr[i+1]):
+        t_r = turing_estimate_of_r(<double>r, <double>Nr[i], <double>Nr[i+1])
+        if abs(t_r - g_r) <= _variance(<double>r, <double>Nr[i], <double>Nr[i+1]):
             return r
     else:
         return length - 1
