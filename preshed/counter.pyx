@@ -117,8 +117,8 @@ cdef double turing_estimate_of_r(double r, double Nr, double Nr1) except -1:
 
 @cython.cdivision(True)
 cdef double gale_estimate_of_r(double r, double gradient, double intercept) except -1:
-    cdef double e_nr  = exp(gradient * log(r) + intercept)
-    cdef double e_nr1 = exp(gradient * log(r+1) + intercept)
+    cdef double e_nr  = exp(gradient * log(<double>r) + intercept)
+    cdef double e_nr1 = exp(gradient * log(<double>r+1) + intercept)
     return (r + 1) * (e_nr1 / e_nr)
 
 

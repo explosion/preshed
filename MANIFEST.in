@@ -5,3 +5,8 @@ recursive-include docs/_build/html *
 include README.rst
 include CHANGES.txt
 include LICENSE.txt
+
+# This ships headers for Murmurhash.
+# We don't use these atm, so don't
+# ship them.
+#recursive-include include *.h
