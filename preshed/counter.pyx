@@ -135,8 +135,8 @@ cdef void _fit_loglinear_model(double* output, count_t* sorted_r, count_t* Nr,
     cdef int i
     for i in range(length):
         r = sorted_r[i]
-        x[i] = log(r)
-        y[i] = log(_get_zr(i, sorted_r, Nr[i], length))
+        x[i] = log(<double>r)
+        y[i] = log(<double>_get_zr(i, sorted_r, Nr[i], length))
         x_mean += x[i]
         y_mean += y[i]
     
