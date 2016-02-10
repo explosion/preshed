@@ -199,7 +199,7 @@ def setup_package():
                          'Intended Audience :: Science/Research',
                          'Programming Language :: Cython',
                          'Topic :: Scientific/Engineering'],
-            install_requires=['cymem == 1.30'],
+            install_requires=['cymem>=1.30,<1.31.0'],
             cmdclass = {
                 'build_ext': build_ext_subclass},
         )
