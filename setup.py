@@ -21,7 +21,7 @@ ISRELEASED = True
 VERSION    = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 
-PACKAGES = ['preshed']
+PACKAGES = ['preshed', 'preshed.tests']
 MOD_NAMES = ['preshed.maps', 'preshed.counter']
 
 
