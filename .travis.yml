@@ -7,6 +7,6 @@ python:
 #
 install:
   - "pip install --upgrade setuptools"
-  - "pip install preshed"
+  - "pip install -e ."
 # command to run tests
-script: "py.test tests/"
+script: "py.test preshed"
