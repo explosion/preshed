@@ -6,8 +6,16 @@ DEF DELETED_KEY = 1
 
 
 cdef class PreshMap:
-    """Hash map that assumes keys come pre-hashed. Uses open addressing with
-    linear probing.
+    """Hash map that assumes keys come pre-hashed. Maps uint64_t --> uint64_t.
+    Uses open addressing with linear probing.
+
+    Usage
+        map = PreshMap() # Create a table
+        map = PreshMap(initial_size=1024) # Create with initial size (efficiency)
+        map[key] = value # Set a value to a key
+        value = map[key] # Get a value given a key
+        for key, value in map.items(): # Iterate over items
+        len(map) # Get number of inserted keys
     """
     def __init__(self, size_t initial_size=8):
         # Size must be power of two
