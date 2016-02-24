@@ -48,6 +48,17 @@ cdef class PreshMap:
     def __setitem__(self, key_t key, size_t value):
         map_set(self.mem, self.c_map, key, <void*>value)
 
+    def __len__(self):
+        return self.length
+
+    def __contains__(self, key_t key):
+        cdef void* value = map_get(self.c_map, key)
+        return True if value != NULL else False
+
+    def __iter__(self):
+        for key in self.keys():
+            yield key
+
     cdef inline void* get(self, key_t key) nogil:
         return map_get(self.c_map, key)
 

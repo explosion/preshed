@@ -35,6 +35,7 @@ cdef class PreshCounter:
         c += inc
         map_set(self.mem, self.c_map, key, <void*>c)
         self.total += inc
+        return c
 
     def prob(self, key_t key):
         cdef GaleSmoother smoother
