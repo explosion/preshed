@@ -10,8 +10,7 @@
         "wheel": [
             "python untar.py source.tar.gz src",
             "python src/setup.py bdist_wheel",
-            "python cpdist.py src/dist",
-            "pip install -v *.whl"
+            "python cpdist.py src/dist"
         ]
     },
     "test": {
