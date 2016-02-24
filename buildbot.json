@@ -1,13 +1,15 @@
 {
     "build": {
         "sdist": [
-            "python pip-clear.py",
             "pip install -r requirements.txt",
             "python setup.py sdist"
         ],
         "install": [
-            "python pip-clear.py",
             "pip install source.tar.gz"
+        ],
+        "wheel": [
+            "python untar.py source.tar.gz .",
+            "python setup.py bdist_wheel"
         ]
     },
     "test": {
