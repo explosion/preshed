@@ -8,7 +8,6 @@
             "pip install source.tar.gz"
         ],
         "wheel": [
-            "python -m pip install -U setuptools pip wheel",
             "python untar.py source.tar.gz .",
             "python setup.py bdist_wheel"
         ]
