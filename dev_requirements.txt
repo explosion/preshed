@@ -1,4 +1,0 @@
-cython
-cymem
-pytest
-murmurhash

@@ -17,9 +17,7 @@ def dev():
         local('virtualenv .denv')
  
     with virtualenv(DEV_ENV_DIR):
-        local('pip install cython')
-        local('pip install murmurhash')
-        local('pip install -r dev_requirements.txt')
+        local('pip install -r requirements.txt')
  
 
 def sdist():
@@ -53,20 +51,20 @@ def install():
 def make():
     with virtualenv(DEV_ENV_DIR):
         with lcd(path.dirname(__file__)):
-            local('python dev_setup.py build_ext --inplace')
+            local('python setup.py build')
 
 
 def clean():
     with lcd(os.path.dirname(__file__)):
-        local('python dev_setup.py clean --all')
+        local('python setup.py clean --all')
     with virtualenv(DEV_ENV_DIR):
         with lcd(os.path.dirname(__file__)):
-            local('python dev_setup.py clean --all')
+            local('python setup.py clean --all')
 
 def test():
     with virtualenv(VENV_DIR):
-        local('py.test -x')
+        local('python -m pytest -x')
 
 
 def travis():
-    local('open https://travis-ci.org/syllog1sm/preshed')
+    local('open https://travis-ci.org/spacy-io/preshed')
