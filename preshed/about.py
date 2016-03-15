@@ -6,7 +6,7 @@
 __title__ = 'preshed'
 __version__ = '0.46.2'
 __summary__ = 'Cython hash table that trusts the keys are pre-hashed'
-__uri__ = 'http://github.com/spacy-io/preshed'
+__uri__ = 'https://github.com/spacy-io/preshed'
 __author__ = 'Matthew Honnibal'
 __email__ = 'matt@spacy.io'
 __license__ = 'MIT'
