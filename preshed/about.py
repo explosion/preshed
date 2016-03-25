@@ -4,7 +4,7 @@
 # https://github.com/pypa/warehouse/blob/master/warehouse/__about__.py
 
 __title__ = 'preshed'
-__version__ = '0.46.2'
+__version__ = '0.46.3'
 __summary__ = 'Cython hash table that trusts the keys are pre-hashed'
 __uri__ = 'https://github.com/spacy-io/preshed'
 __author__ = 'Matthew Honnibal'
