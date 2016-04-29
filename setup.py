@@ -125,7 +125,7 @@ def setup_package():
             license=about['__license__'],
             ext_modules=ext_modules,
             install_requires=[
-                'cymem>=1.30,<1.31.0'],
+                'cymem>=1.30,<1.32.0'],
             classifiers=[
                 'Environment :: Console',
                 'Intended Audience :: Developers',
