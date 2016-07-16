@@ -1,3 +1,6 @@
+# cython: infer_types=True
+# cython: cdivision=True
+#
 cimport cython
 
 
@@ -49,12 +52,20 @@ cdef class PreshMap:
         for _, value in self.items():
             yield value
 
+    def pop(self, key_t key, default=None):
+        cdef void* value = map_get(self.c_map, key)
+        map_clear(self.c_map, key)
+        return <size_t>value if value != NULL else default
+
     def __getitem__(self, key_t key):
         cdef void* value = map_get(self.c_map, key)
         return <size_t>value if value != NULL else None
 
     def __setitem__(self, key_t key, size_t value):
         map_set(self.mem, self.c_map, key, <void*>value)
+
+    def __delitem__(self, key_t key):
+        map_clear(self.c_map, key)
 
     def __len__(self):
         return self.length
@@ -122,6 +133,21 @@ cdef void* map_get(const MapStruct* map_, const key_t key) nogil:
         return map_.value_for_del_key
     cdef Cell* cell = _find_cell(map_.cells, map_.length, key)
     return cell.value
+
+
+cdef void* map_clear(const MapStruct* map_, const key_t key) nogil:
+    if key == EMPTY_KEY:
+        value = map_.value_for_empty_key if map_.is_empty_key_set else NULL
+        map_.is_empty_key_set = False
+        return value
+    elif key == DELETED_KEY:
+        value = map_.value_for_del_key if map_.is_del_key_set else NULL
+        map_.is_del_key_set = False
+        return value
+    else:
+        cell = _find_cell(map_.cells, map_.length, key)
+        cell.key = DELETED_KEY
+        return cell.value
 
 
 cdef void* map_bulk_get(const MapStruct* map_, const key_t* keys, void** values,
