@@ -135,7 +135,7 @@ cdef void* map_get(const MapStruct* map_, const key_t key) nogil:
     return cell.value
 
 
-cdef void* map_clear(const MapStruct* map_, const key_t key) nogil:
+cdef void* map_clear(MapStruct* map_, const key_t key) nogil:
     if key == EMPTY_KEY:
         value = map_.value_for_empty_key if map_.is_empty_key_set else NULL
         map_.is_empty_key_set = False
@@ -147,6 +147,7 @@ cdef void* map_clear(const MapStruct* map_, const key_t key) nogil:
     else:
         cell = _find_cell(map_.cells, map_.length, key)
         cell.key = DELETED_KEY
+        map_.filled -= 1
         return cell.value
 
 
