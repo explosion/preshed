@@ -33,7 +33,7 @@ cdef class PreshMap:
         self.c_map = <MapStruct*>self.mem.alloc(1, sizeof(MapStruct))
         map_init(self.mem, self.c_map, initial_size)
 
-    property length:
+    property capacity:
         def __get__(self):
             return self.c_map.length
 
@@ -68,7 +68,7 @@ cdef class PreshMap:
         map_clear(self.c_map, key)
 
     def __len__(self):
-        return self.length
+        return self.c_map.filled
 
     def __contains__(self, key_t key):
         cdef void* value = map_get(self.c_map, key)
