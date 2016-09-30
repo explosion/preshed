@@ -1,3 +1,6 @@
+.. image:: https://travis-ci.org/spacy-io/preshed.svg?branch=master
+    :target: https://travis-ci.org/spacy-io/preshed
+
 Cython Hash Table for Pre-Hashed Keys
 -------------------------------------
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import os
-import shutil
 import subprocess
 import sys
 import contextlib
 from distutils.command.build_ext import build_ext
 from distutils.sysconfig import get_python_inc
+from distutils import ccompiler, msvccompiler
 
 try:
     from setuptools import Extension, setup
@@ -86,13 +86,20 @@ def setup_package():
         return clean(root)
 
     with chdir(root):
-        about = {}
         with open(os.path.join(root, 'preshed', 'about.py')) as f:
+            about = {}
             exec(f.read(), about)
+
+        with open(os.path.join(root, 'README.rst')) as f:
+            readme = f.read()
 
         include_dirs = [
             get_python_inc(plat_specific=True),
             os.path.join(root, 'include')]
+
+        if (ccompiler.new_compiler().compiler_type == 'msvc'
+            and msvccompiler.get_build_version() == 9):
+            include_dirs.append(os.path.join(root, 'include', 'msvc9'))
 
         ext_modules = []
         for mod_name in MOD_NAMES:
@@ -105,22 +112,35 @@ def setup_package():
             generate_cython(root, 'preshed')
 
         setup(
-            name=about['__name__'],
+            name=about['__title__'],
+            zip_safe=False,
             packages=PACKAGES,
             package_data={'': ['*.pyx', '*.pxd']},
             description=about['__summary__'],
+            long_description=readme,
             author=about['__author__'],
             author_email=about['__email__'],
             version=about['__version__'],
             url=about['__uri__'],
             license=about['__license__'],
             ext_modules=ext_modules,
-            classifiers=['Environment :: Console',
-                         'Operating System :: OS Independent',
-                         'Intended Audience :: Science/Research',
-                         'Programming Language :: Cython',
-                         'Topic :: Scientific/Engineering'],
-            install_requires=['cymem>=1.30,<1.31.0'],
+            install_requires=[
+                'cymem>=1.30,<1.32.0'],
+            classifiers=[
+                'Environment :: Console',
+                'Intended Audience :: Developers',
+                'Intended Audience :: Science/Research',
+                'License :: OSI Approved :: MIT License',
+                'Operating System :: POSIX :: Linux',
+                'Operating System :: MacOS :: MacOS X',
+                'Operating System :: Microsoft :: Windows',
+                'Programming Language :: Cython',
+                'Programming Language :: Python :: 2.6',
+                'Programming Language :: Python :: 2.7',
+                'Programming Language :: Python :: 3.3',
+                'Programming Language :: Python :: 3.4',
+                'Programming Language :: Python :: 3.5',
+                'Topic :: Scientific/Engineering'],
             cmdclass = {
                 'build_ext': build_ext_subclass},
         )
