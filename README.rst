@@ -1,9 +1,7 @@
-.. image:: https://travis-ci.org/spacy-io/preshed.svg?branch=master
-    :target: https://travis-ci.org/spacy-io/preshed
+preshed: Cython Hash Table for Pre-Hashed Keys
+**********************************************
 
-Cython Hash Table for Pre-Hashed Keys
--------------------------------------
+Simple but high performance Cython hash table mapping pre-randomized keys to void* values. Inspired by `Jeff Preshing <http://preshing.com/20130107/this-hash-table-is-faster-than-a-judy-array/>`_
 
-Simple but high performance Cython hash table mapping pre-randomized keys to void* values.
-
-Inspired by: http://preshing.com/20130107/this-hash-table-is-faster-than-a-judy-array/
+    .. image:: https://travis-ci.org/spacy-io/preshed.svg?branch=master
+        :target: https://travis-ci.org/spacy-io/preshed
