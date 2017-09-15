@@ -95,7 +95,7 @@ def setup_package():
 
         include_dirs = [
             get_python_inc(plat_specific=True),
-            os.path.join(root, 'include')]
+        ]
 
         if (ccompiler.new_compiler().compiler_type == 'msvc'
             and msvccompiler.get_build_version() == 9):
