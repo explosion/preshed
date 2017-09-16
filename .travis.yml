@@ -12,6 +12,7 @@ install:
   - if [ "${TRAVIS_OS_NAME:-}" == "osx"]; then
       brew install python3;
     fi
+  - pip install cython
   - pip3 install cibuildwheel==0.5.1
   - touch .cibuildwheel
 
