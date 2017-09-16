@@ -1,10 +1,19 @@
+language: python
 matrix:
   include:
-    - sudo: required
-      services:
-        - docker
+    - os: linux
+      python: 3.5
+
     - os: osx
+      sudo: required
+      language: generic
+
+install:
+  - if [ "${TRAVIS_OS_NAME:-}" == "osx"]; then
+      brew install python3;
+    fi
+  - pip3 install cibuildwheel==0.5.1
+  - touch .cibuildwheel
 
 script:
-  - pip install cibuildwheel==0.5.1
   - cibuildwheel --output-dir wheelhouse
