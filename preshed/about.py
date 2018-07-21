@@ -10,4 +10,4 @@ __uri__ = 'https://github.com/explosion/preshed'
 __author__ = 'Matthew Honnibal'
 __email__ = 'matt@explosion.ai'
 __license__ = 'MIT'
-__release__ = False
+__release__ = True
