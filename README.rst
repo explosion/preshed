@@ -14,6 +14,10 @@ Simple but high performance Cython hash table mapping pre-randomized keys to voi
 .. image:: https://img.shields.io/pypi/v/preshed.svg?style=flat-square  
     :target: https://pypi.python.org/pypi/preshed
     :alt: pypi Version
+    
+.. image:: https://img.shields.io/conda/vn/conda-forge/preshed.svg?style=flat-square
+    :target: https://anaconda.org/conda-forge/preshed
+    :alt: conda Version
 
 .. image:: https://img.shields.io/badge/wheels-%E2%9C%93-4c1.svg?longCache=true&style=flat-square&logo=python&logoColor=white
     :target: https://github.com/explosion/wheelwright/releases
