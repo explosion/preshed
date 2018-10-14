@@ -124,8 +124,8 @@ def setup_package():
             url=about['__uri__'],
             license=about['__license__'],
             ext_modules=ext_modules,
-            install_requires=[
-                'cymem>=1.30,<1.32.0'],
+            setup_requires=['wheel>=0.32.0,<0.33.0'],
+            install_requires=['cymem>=2.0.1,<2.1.0'],
             classifiers=[
                 'Environment :: Console',
                 'Intended Audience :: Developers',
