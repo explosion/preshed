@@ -114,7 +114,7 @@ def setup_package():
             generate_cython(root, "preshed")
 
         setup(
-            name=about["__title__"],
+            name="preshed",
             zip_safe=False,
             packages=PACKAGES,
             package_data={"": ["*.pyx", "*.pxd"]},
