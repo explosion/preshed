@@ -3,7 +3,7 @@ from libc.stdint cimport int64_t
 from cymem.cymem cimport Pool
 
 from .maps cimport MapStruct
-from .maps cimport map_init, map_get, map_set
+from .maps cimport map_init, map_get, map_set, map_iter
 from .maps cimport key_t
 
 

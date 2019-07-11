@@ -22,11 +22,11 @@ cdef class PreshCounter:
         return self.c_map.length
 
     def __iter__(self):
-        cdef int i
-        for i in range(self.c_map.length):
-            key = self.c_map.cells[i].key
-            if key != 0:
-                yield (key, <count_t>map_get(self.c_map, key))
+        cdef int i = 0
+        cdef key_t key
+        cdef void* value
+        while map_iter(self.c_map, &i, &key, &value):
+            yield key, <size_t>value
 
     def __getitem__(self, key_t key):
         return <count_t>map_get(self.c_map, key)
