@@ -43,18 +43,36 @@ cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length):
     bloom.hcount = hcount
     bloom.bitfield = <key_t*>mem.alloc(length // sizeof(key_t), sizeof(key_t))
 
+"""
+Instead of calling MurmurHash with a different seed for each hash function, this
+generates two initial hash values and then combines them to create the correct
+number of hashes. This technique is faster than just doing MurmurhHash
+repeatedly and has been shown to work as well as full hashing.
+
+For details see "Less Hashing, Same Performance: Building a Better Bloom
+Filter", Kirsch & Mitzenmacher.
+
+https://www.semanticscholar.org/paper/Less-hashing%2C-same-performance%3A-Building-a-better-Kirsch-Mitzenmacher/65c43afbfc064705bdc40d3473f32518e9306429
+
+The choice of seeds is arbitrary.
+"""
+
 cdef void bloom_add(BloomStruct* bloom, key_t item):
     cdef key_t hv
-    for seed in range(bloom.hcount):
-        hv = hash64(&item, sizeof(key_t), seed) % bloom.length
+    cdef key_t h1 = hash64(&item, sizeof(key_t), 0)
+    cdef key_t h2 = hash64(&item, sizeof(key_t), 23)
+    for hiter in range(bloom.hcount):
+        hv = (h1 + (hiter * h2)) % bloom.length
         bloom.bitfield[hv // sizeof(key_t)] |= 1 << (hv % sizeof(key_t))
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef bint bloom_contains(BloomStruct* bloom, key_t item) nogil:
     cdef key_t hv
-    for seed in range(bloom.hcount):
-        hv = hash64(&item, sizeof(key_t), seed) % bloom.length
+    cdef key_t h1 = hash64(&item, sizeof(key_t), 0)
+    cdef key_t h2 = hash64(&item, sizeof(key_t), 23)
+    for hiter in range(bloom.hcount):
+        hv = (h1 + (hiter * h2)) % bloom.length
         if not (bloom.bitfield[hv // sizeof(key_t)] & 
            1 << (hv % sizeof(key_t))):
             return False
