@@ -1,4 +1,4 @@
-from libc.stdint cimport uint32_t, uint64_t
+from libc.stdint cimport uint64_t
 from cymem.cymem cimport Pool
 
 ctypedef uint64_t key_t
@@ -17,7 +17,7 @@ cdef class BloomFilter:
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length)
 
-cdef void bloom_add(BloomStruct* bloom, key_t item)
+cdef void bloom_add(BloomStruct* bloom, key_t item) nogil
 
 cdef bint bloom_contains(BloomStruct* bloom, key_t item) nogil
 

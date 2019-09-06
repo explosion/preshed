@@ -3,14 +3,14 @@
 #
 cimport cython
 
-from murmurhash.mrmr cimport hash64
+from murmurhash.mrmr cimport hash128_x86
 import math
 
-def optimal_params(members, error_rate):
+def calculate_size_and_hash_count(members, error_rate):
     """Calculate the optimal size in bits and number of hash functions for a
     given number of members and error rate.  
     """
-    base = math.log(1 / (2 ** math.log2))
+    base = math.log(1 / (2 ** math.log(2)))
     bit_count = math.ceil((members * math.log(error_rate)) / base)
     hash_count = math.floor((bit_count / members) * math.log(2))
     return dict(size=bit_count, hash_funcs=hash_count)
@@ -57,22 +57,22 @@ https://www.semanticscholar.org/paper/Less-hashing%2C-same-performance%3A-Buildi
 The choice of seeds is arbitrary.
 """
 
-cdef void bloom_add(BloomStruct* bloom, key_t item):
+cdef void bloom_add(BloomStruct* bloom, key_t item) nogil:
     cdef key_t hv
-    cdef key_t h1 = hash64(&item, sizeof(key_t), 0)
-    cdef key_t h2 = hash64(&item, sizeof(key_t), 23)
+    cdef key_t[2] keys
+    hash128_x86(&item, sizeof(key_t), 0, &keys)
     for hiter in range(bloom.hcount):
-        hv = (h1 + (hiter * h2)) % bloom.length
+        hv = (keys[0] + (hiter * keys[1])) % bloom.length
         bloom.bitfield[hv // sizeof(key_t)] |= 1 << (hv % sizeof(key_t))
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef bint bloom_contains(BloomStruct* bloom, key_t item) nogil:
     cdef key_t hv
-    cdef key_t h1 = hash64(&item, sizeof(key_t), 0)
-    cdef key_t h2 = hash64(&item, sizeof(key_t), 23)
+    cdef key_t[2] keys
+    hash128_x86(&item, sizeof(key_t), 0, &keys)
     for hiter in range(bloom.hcount):
-        hv = (h1 + (hiter * h2)) % bloom.length
+        hv = (keys[0] + (hiter * keys[1])) % bloom.length
         if not (bloom.bitfield[hv // sizeof(key_t)] & 
            1 << (hv % sizeof(key_t))):
             return False
