@@ -6,6 +6,7 @@ cimport cython
 from murmurhash.mrmr cimport hash128_x86
 import math
 
+
 def calculate_size_and_hash_count(members, error_rate):
     """Calculate the optimal size in bits and number of hash functions for a
     given number of members and error rate.  
@@ -15,16 +16,17 @@ def calculate_size_and_hash_count(members, error_rate):
     hash_count = math.floor((bit_count / members) * math.log(2))
     return (bit_count, hash_count)
 
+
 cdef class BloomFilter:
     """Bloom filter that allows for basic membership tests.
     
     Only integers are supported as keys.
     """
-    def __init__(self, key_t size=(2 ** 10), key_t hash_funcs=23):
+    def __init__(self, key_t size=(2 ** 10), key_t hash_funcs=23, uint32_t seed=0):
         self.mem = Pool()
 
         self.c_bloom = <BloomStruct*>self.mem.alloc(1, sizeof(BloomStruct))
-        bloom_init(self.mem, self.c_bloom, hash_funcs, size)
+        bloom_init(self.mem, self.c_bloom, hash_funcs, size, seed)
 
     @classmethod
     def from_error_rate(cls, members, error_rate=1E-4):
@@ -40,27 +42,28 @@ cdef class BloomFilter:
     cdef inline bint contains(self, key_t item) nogil:
         return bloom_contains(self.c_bloom, item)
 
-cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length):
+
+cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
     # size should be a multiple of the container size - round up
     if length % sizeof(key_t):
         length = math.ceil(length / sizeof(key_t)) * sizeof(key_t)
     bloom.length = length
     bloom.hcount = hcount
     bloom.bitfield = <key_t*>mem.alloc(length // sizeof(key_t), sizeof(key_t))
+    bloom.seed = 0
 
-"""
-Instead of calling MurmurHash with a different seed for each hash function, this
-generates two initial hash values and then combines them to create the correct
-number of hashes. This technique is faster than just doing MurmurhHash
-repeatedly and has been shown to work as well as full hashing.
 
-For details see "Less Hashing, Same Performance: Building a Better Bloom
-Filter", Kirsch & Mitzenmacher.
+# Instead of calling MurmurHash with a different seed for each hash function, this
+# generates two initial hash values and then combines them to create the correct
+# number of hashes. This technique is faster than just doing MurmurhHash
+# repeatedly and has been shown to work as well as full hashing.
 
-https://www.semanticscholar.org/paper/Less-hashing%2C-same-performance%3A-Building-a-better-Kirsch-Mitzenmacher/65c43afbfc064705bdc40d3473f32518e9306429
+# For details see "Less Hashing, Same Performance: Building a Better Bloom
+# Filter", Kirsch & Mitzenmacher.
 
-The choice of seeds is arbitrary.
-"""
+# https://www.semanticscholar.org/paper/Less-hashing%2C-same-performance%3A-Building-a-better-Kirsch-Mitzenmacher/65c43afbfc064705bdc40d3473f32518e9306429
+# The choice of seeds is arbitrary.
+
 
 cdef void bloom_add(BloomStruct* bloom, key_t item) nogil:
     cdef key_t hv
@@ -70,8 +73,7 @@ cdef void bloom_add(BloomStruct* bloom, key_t item) nogil:
         hv = (keys[0] + (hiter * keys[1])) % bloom.length
         bloom.bitfield[hv // sizeof(key_t)] |= 1 << (hv % sizeof(key_t))
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
+
 cdef bint bloom_contains(BloomStruct* bloom, key_t item) nogil:
     cdef key_t hv
     cdef key_t[2] keys
