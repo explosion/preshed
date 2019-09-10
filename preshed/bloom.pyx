@@ -93,18 +93,20 @@ cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, u
 cdef void bloom_add(BloomStruct* bloom, key_t item) nogil:
     cdef key_t hv
     cdef key_t[2] keys
+    cdef key_t one = 1 # We want this explicitly typed, because bits
     hash128_x86(&item, sizeof(key_t), 0, &keys)
     for hiter in range(bloom.hcount):
         hv = (keys[0] + (hiter * keys[1])) % bloom.length
-        bloom.bitfield[hv // sizeof(key_t)] |= 1 << (hv % sizeof(key_t))
+        bloom.bitfield[hv // sizeof(key_t)] |= one << (hv % sizeof(key_t))
 
 
 cdef bint bloom_contains(const BloomStruct* bloom, key_t item) nogil:
     cdef key_t hv
     cdef key_t[2] keys
+    cdef key_t one = 1 # We want this explicitly typed, because bits
     hash128_x86(&item, sizeof(key_t), 0, &keys)
     for hiter in range(bloom.hcount):
         hv = (keys[0] + (hiter * keys[1])) % bloom.length
-        if not (bloom.bitfield[hv // sizeof(key_t)] & 1 << (hv % sizeof(key_t))):
+        if not (bloom.bitfield[hv // sizeof(key_t)] & one << (hv % sizeof(key_t))):
             return False
     return True
