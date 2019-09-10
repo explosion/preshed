@@ -53,13 +53,19 @@ cdef class PreshMap:
             yield value
 
     def pop(self, key_t key, default=None):
-        cdef void* value = map_get(self.c_map, key)
+        cdef Result result = map_get_unless_missing(self.c_map, key)
         map_clear(self.c_map, key)
-        return <size_t>value if value != NULL else default
+        if result.found:
+            return <size_t>result.value
+        else:
+            return default
 
     def __getitem__(self, key_t key):
-        cdef void* value = map_get(self.c_map, key)
-        return <size_t>value if value != NULL else None
+        cdef Result result = map_get_unless_missing(self.c_map, key)
+        if result.found:
+            return <size_t>result.value
+        else:
+            return None
 
     def __setitem__(self, key_t key, size_t value):
         map_set(self.mem, self.c_map, key, <void*>value)
@@ -71,8 +77,8 @@ cdef class PreshMap:
         return self.c_map.filled
 
     def __contains__(self, key_t key):
-        cdef void* value = map_get(self.c_map, key)
-        return True if value != NULL else False
+        cdef Result result = map_get_unless_missing(self.c_map, key)
+        return True if result.found else False
 
     def __iter__(self):
         for key in self.keys():
@@ -136,6 +142,27 @@ cdef void* map_get(const MapStruct* map_, const key_t key) nogil:
     return cell.value
 
 
+cdef Result map_get_unless_missing(const MapStruct* map_, const key_t key) nogil:
+    cdef Result result
+    cdef Cell* cell
+    result.found = 0
+    result.value = NULL
+    if key == EMPTY_KEY:
+        if map_.is_empty_key_set:
+            result.found = 1
+            result.value = map_.value_for_empty_key
+    elif key == DELETED_KEY:
+        if map_.is_del_key_set:
+            result.found = 1
+            result.value = map_.value_for_del_key
+    else:
+        cell = _find_cell(map_.cells, map_.length, key)
+        if cell.key == key:
+            result.found = 1
+            result.value = cell.value
+    return result
+
+
 cdef void* map_clear(MapStruct* map_, const key_t key) nogil:
     if key == EMPTY_KEY:
         value = map_.value_for_empty_key if map_.is_empty_key_set else NULL
@@ -191,7 +218,7 @@ cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) nogi
 cdef inline Cell* _find_cell(Cell* cells, const key_t size, const key_t key) nogil:
     # Modulo for powers-of-two via bitwise &
     cdef key_t i = (key & (size - 1))
-    while cells[i].key != 0 and cells[i].key != key:
+    while cells[i].key != EMPTY_KEY and cells[i].key != key:
         i = (i + 1) & (size - 1)
     return &cells[i]
 

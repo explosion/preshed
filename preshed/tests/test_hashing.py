@@ -67,3 +67,10 @@ def test_many_and_empty():
     for i in range(10):
         del table[i]
     assert table[0] == None
+
+
+def test_zero_values():
+    table = PreshMap()
+    table[10] = 0
+    assert table[10] == 0
+    assert table[11] is None

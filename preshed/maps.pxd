@@ -10,6 +10,11 @@ cdef struct Cell:
     void* value
 
 
+cdef struct Result:
+    int found
+    void* value
+
+
 cdef struct MapStruct:
     Cell* cells
     void* value_for_empty_key
