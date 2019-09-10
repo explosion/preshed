@@ -24,3 +24,12 @@ def test_no_false_negatives():
     for ii in range(0,1000,20):
         assert ii in bf
 
+def test_from_error():
+    bf = BloomFilter.from_error_rate(1000)
+    for ii in range(0,1000,20):
+        bf.add(ii)
+
+    for ii in range(0,1000,20):
+        assert ii in bf
+
+

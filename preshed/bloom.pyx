@@ -13,7 +13,7 @@ def calculate_size_and_hash_count(members, error_rate):
     base = math.log(1 / (2 ** math.log(2)))
     bit_count = math.ceil((members * math.log(error_rate)) / base)
     hash_count = math.floor((bit_count / members) * math.log(2))
-    return dict(size=bit_count, hash_funcs=hash_count)
+    return (bit_count, hash_count)
 
 cdef class BloomFilter:
     """Bloom filter that allows for basic membership tests.
@@ -25,6 +25,11 @@ cdef class BloomFilter:
 
         self.c_bloom = <BloomStruct*>self.mem.alloc(1, sizeof(BloomStruct))
         bloom_init(self.mem, self.c_bloom, hash_funcs, size)
+
+    @classmethod
+    def from_error_rate(cls, members, error_rate=1E-4):
+        params = calculate_size_and_hash_count(members, error_rate)
+        return cls(*params)
 
     def add(self, key_t item):
         bloom_add(self.c_bloom, item)
