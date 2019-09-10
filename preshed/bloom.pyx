@@ -5,6 +5,11 @@ from murmurhash.mrmr cimport hash128_x86
 import math
 from array import array
 
+try:
+    import copy_reg
+except ImportError:
+    import copyreg as copy_reg
+
 
 def calculate_size_and_hash_count(members, error_rate):
     """Calculate the optimal size in bits and number of hash functions for a
@@ -45,6 +50,7 @@ cdef class BloomFilter:
 
     def from_bytes(self, bytes byte_string):
         bloom_from_bytes(self.mem, self.c_bloom, byte_string)
+        return self
 
 
 cdef bytes bloom_to_bytes(const BloomStruct* bloom):
@@ -117,3 +123,14 @@ cdef bint bloom_contains(const BloomStruct* bloom, key_t item) nogil:
         if not (bloom.bitfield[hv // sizeof(key_t)] & one << (hv % sizeof(key_t))):
             return False
     return True
+
+
+def pickle_bloom(BloomFilter bloom):
+    return unpickle_bloom, (bloom.to_bytes(),)
+
+
+def unpickle_bloom(byte_string):
+    return BloomFilter().from_bytes(byte_string)
+
+
+copy_reg.pickle(BloomFilter, pickle_bloom, unpickle_bloom)
