@@ -48,3 +48,22 @@ def test_iter():
         val_sum -= value
     assert key_sum == 0
     assert val_sum == 0
+
+
+def test_one_and_empty():
+    # See Issue #21
+    table = PreshMap()
+    for i in range(10):
+        table[i] = i
+        del table[i]
+    assert table[0] == None
+
+
+def test_many_and_empty():
+    # See Issue #21
+    table = PreshMap()
+    for i in range(10):
+        table[i] = i
+    for i in range(10):
+        del table[i]
+    assert table[0] == None
