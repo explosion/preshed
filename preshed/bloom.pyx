@@ -1,10 +1,9 @@
 # cython: infer_types=True
 # cython: cdivision=True
 #
-cimport cython
-
 from murmurhash.mrmr cimport hash128_x86
 import math
+from array import array
 
 
 def calculate_size_and_hash_count(members, error_rate):
@@ -24,7 +23,6 @@ cdef class BloomFilter:
     """
     def __init__(self, key_t size=(2 ** 10), key_t hash_funcs=23, uint32_t seed=0):
         self.mem = Pool()
-
         self.c_bloom = <BloomStruct*>self.mem.alloc(1, sizeof(BloomStruct))
         bloom_init(self.mem, self.c_bloom, hash_funcs, size, seed)
 
@@ -42,6 +40,33 @@ cdef class BloomFilter:
     cdef inline bint contains(self, key_t item) nogil:
         return bloom_contains(self.c_bloom, item)
 
+    def to_bytes(self):
+        return bloom_to_bytes(self.c_bloom)
+
+    def from_bytes(self, bytes byte_string):
+        bloom_from_bytes(self.mem, self.c_bloom, byte_string)
+
+
+cdef bytes bloom_to_bytes(const BloomStruct* bloom):
+    py = array("L")
+    py.append(bloom.hcount)
+    py.append(bloom.length)
+    py.append(bloom.seed)
+    for i in range(bloom.length // sizeof(key_t)):
+        py.append(bloom.bitfield[i])
+    return py.tobytes()
+
+
+cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
+    py = array("L")
+    py.frombytes(data)
+    bloom.hcount = py[0]
+    bloom.length = py[1]
+    bloom.seed = py[2]
+    bloom.bitfield = <key_t*>mem.alloc(bloom.length // sizeof(key_t), sizeof(key_t))
+    for i in range(bloom.length // sizeof(key_t)):
+        bloom.bitfield[i] = py[3+i]
+
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
     # size should be a multiple of the container size - round up
@@ -50,7 +75,7 @@ cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, u
     bloom.length = length
     bloom.hcount = hcount
     bloom.bitfield = <key_t*>mem.alloc(length // sizeof(key_t), sizeof(key_t))
-    bloom.seed = 0
+    bloom.seed = seed
 
 
 # Instead of calling MurmurHash with a different seed for each hash function, this
@@ -74,13 +99,12 @@ cdef void bloom_add(BloomStruct* bloom, key_t item) nogil:
         bloom.bitfield[hv // sizeof(key_t)] |= 1 << (hv % sizeof(key_t))
 
 
-cdef bint bloom_contains(BloomStruct* bloom, key_t item) nogil:
+cdef bint bloom_contains(const BloomStruct* bloom, key_t item) nogil:
     cdef key_t hv
     cdef key_t[2] keys
     hash128_x86(&item, sizeof(key_t), 0, &keys)
     for hiter in range(bloom.hcount):
         hv = (keys[0] + (hiter * keys[1])) % bloom.length
-        if not (bloom.bitfield[hv // sizeof(key_t)] & 
-           1 << (hv % sizeof(key_t))):
+        if not (bloom.bitfield[hv // sizeof(key_t)] & 1 << (hv % sizeof(key_t))):
             return False
     return True

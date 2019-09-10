@@ -32,4 +32,15 @@ def test_from_error():
     for ii in range(0,1000,20):
         assert ii in bf
 
-
+def test_to_from_bytes():
+    bf = BloomFilter(size=100, hash_funcs=2)
+    for ii in range(0,1000,20):
+        bf.add(ii)
+    data = bf.to_bytes()
+    bf2 = BloomFilter()
+    for ii in range(0,1000,20):
+        assert ii not in bf2
+    bf2.from_bytes(data)
+    for ii in range(0,1000,20):
+        assert ii in bf2
+    assert bf2.to_bytes() == data
