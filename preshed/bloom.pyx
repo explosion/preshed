@@ -63,7 +63,10 @@ cdef bytes bloom_to_bytes(const BloomStruct* bloom):
 
 cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     py = array("L")
-    py.frombytes(data)
+    if hasattr(py, "frombytes"):
+        py.frombytes(data)
+    else:
+        py.fromstring(data)
     bloom.hcount = py[0]
     bloom.length = py[1]
     bloom.seed = py[2]
