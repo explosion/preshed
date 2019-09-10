@@ -1,3 +1,4 @@
 cymem>=2.0.2,<2.1.0
 cython>=0.28
 pytest
+murmurhash==1.0.2

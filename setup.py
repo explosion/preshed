@@ -15,7 +15,7 @@ except ImportError:
 
 
 PACKAGES = ["preshed", "preshed.tests"]
-MOD_NAMES = ["preshed.maps", "preshed.counter"]
+MOD_NAMES = ["preshed.maps", "preshed.counter", "preshed.bloom"]
 
 
 # By subclassing build_extensions we have the actual compiler that will be used which is really known only after finalize_options
