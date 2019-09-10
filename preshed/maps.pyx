@@ -110,20 +110,21 @@ cdef void map_init(Pool mem, MapStruct* map_, size_t length) except *:
 
 
 cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *:
+    cdef Cell* cell
     if key == EMPTY_KEY:
         map_.value_for_empty_key = value
         map_.is_empty_key_set = True
     elif key == DELETED_KEY:
         map_.value_for_del_key = value
         map_.is_del_key_set = True
-    cdef Cell* cell
-    cell = _find_cell(map_.cells, map_.length, key)
-    if cell.key == EMPTY_KEY:
-        cell.key = key
-        map_.filled += 1
-    cell.value = value
-    if (map_.filled + 1) * 5 >= (map_.length * 3):
-        _resize(mem, map_)
+    else:
+        cell = _find_cell(map_.cells, map_.length, key)
+        if cell.key == EMPTY_KEY:
+            cell.key = key
+            map_.filled += 1
+        cell.value = value
+        if (map_.filled + 1) * 5 >= (map_.length * 3):
+            _resize(mem, map_)
 
 
 cdef void* map_get(const MapStruct* map_, const key_t key) nogil:
