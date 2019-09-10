@@ -54,7 +54,11 @@ cdef bytes bloom_to_bytes(const BloomStruct* bloom):
     py.append(bloom.seed)
     for i in range(bloom.length // sizeof(key_t)):
         py.append(bloom.bitfield[i])
-    return py.tobytes()
+    if hasattr(py, "tobytes"):
+        return py.tobytes()
+    else:
+        # Python 2 :(
+        return py.tostring()
 
 
 cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
