@@ -124,10 +124,10 @@ cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *:
         map_.value_for_del_key = value
         map_.is_del_key_set = True
     else:
-        cell = _find_cell(map_.cells, map_.length, key)
+        cell = _find_cell_for_insertion(map_.cells, map_.length, key)
         if cell.key == EMPTY_KEY:
-            cell.key = key
             map_.filled += 1
+        cell.key = key
         cell.value = value
         if (map_.filled + 1) * 5 >= (map_.length * 3):
             _resize(mem, map_)
@@ -175,7 +175,10 @@ cdef void* map_clear(MapStruct* map_, const key_t key) nogil:
     else:
         cell = _find_cell(map_.cells, map_.length, key)
         cell.key = DELETED_KEY
-        map_.filled -= 1
+        # We shouldn't decrement the "filled" value here, as we're not actually
+        # making "empty" values -- deleted values aren't quite the same.
+        # Instead if we manage to insert into a deleted slot, we don't increment
+        # the fill rate.
         return cell.value
 
 
@@ -220,6 +223,28 @@ cdef inline Cell* _find_cell(Cell* cells, const key_t size, const key_t key) nog
     cdef key_t i = (key & (size - 1))
     while cells[i].key != EMPTY_KEY and cells[i].key != key:
         i = (i + 1) & (size - 1)
+    return &cells[i]
+
+
+@cython.cdivision
+cdef inline Cell* _find_cell_for_insertion(Cell* cells, const key_t size, const key_t key) nogil:
+    """Find the correct cell to insert a value, which could be a previously
+    deleted cell. If we cross a deleted cell and the key is in the table, we
+    mark the later cell as deleted, and return the earlier one."""
+    cdef Cell* deleted = NULL
+    # Modulo for powers-of-two via bitwise &
+    cdef key_t i = (key & (size - 1))
+    while cells[i].key != EMPTY_KEY and cells[i].key != key:
+        if cells[i].key == DELETED_KEY:
+            deleted = &cells[i]
+        i = (i + 1) & (size - 1)
+    if deleted is not NULL:
+        if cells[i].key == key:
+            # We need to ensure we don't end up with the key in the table twice.
+            # If we're using a deleted cell and we also have the key, we mark
+            # the later cell as deleted.
+            cells[i].key = DELETED_KEY
+        return deleted
     return &cells[i]
 
 
