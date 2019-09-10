@@ -20,4 +20,6 @@ cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, u
 
 cdef void bloom_add(BloomStruct* bloom, key_t item) nogil
 
-cdef bint bloom_contains(BloomStruct* bloom, key_t item) nogil
+cdef bint bloom_contains(const BloomStruct* bloom, key_t item) nogil
+
+cdef void bloom_add(BloomStruct* bloom, key_t item) nogil
