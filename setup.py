@@ -127,7 +127,7 @@ def setup_package():
             url=about["__uri__"],
             license=about["__license__"],
             ext_modules=ext_modules,
-            setup_requires=[],
+            setup_requires=["cython>=0.25", "cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             install_requires=["cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             classifiers=[
                 "Environment :: Console",
