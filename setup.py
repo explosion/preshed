@@ -117,7 +117,7 @@ def setup_package():
             name="preshed",
             zip_safe=False,
             packages=PACKAGES,
-            package_data={"": ["*.pyx", "*.pxd"]},
+            package_data={"": ["*.pyx", "*.pxd", "*.cpp"]},
             description=about["__summary__"],
             long_description=readme,
             long_description_content_type="text/markdown",
@@ -127,7 +127,7 @@ def setup_package():
             url=about["__uri__"],
             license=about["__license__"],
             ext_modules=ext_modules,
-            setup_requires=[],
+            setup_requires=["cython>=0.28", "cymem>=2.0.2,<2.1.0"],
             install_requires=["cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             classifiers=[
                 "Environment :: Console",

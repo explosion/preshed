@@ -78,6 +78,8 @@ jobs:
   - script: |
       python setup.py build_ext --inplace
       python setup.py sdist
+      pip freeze > installed.txt
+      pip uninstall -y -r installed.txt
     displayName: 'Build sdist'
 
   - script: pip install dist/*.tar.gz
@@ -89,5 +91,6 @@ jobs:
     displayName: 'Install with pip (Windows)'
 
   - script: |
+      pip install -r requirements.txt
       python -m pytest preshed
     displayName: 'Run tests'
