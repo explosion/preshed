@@ -72,11 +72,13 @@ jobs:
 
   - script: |
       python -m pip install --upgrade pip wheel
+      pip install -r requirements.txt
     displayName: 'Install dependencies'
 
   - script: |
       python setup.py build_ext --inplace
       python setup.py sdist
+      pip uninstall -r requirements.txt
     displayName: 'Build sdist'
 
   - script: pip install dist/*.tar.gz
