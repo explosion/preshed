@@ -78,7 +78,8 @@ jobs:
   - script: |
       python setup.py build_ext --inplace
       python setup.py sdist
-      pip uninstall -y -r requirements.txt
+      pip freeze > installed.txt
+      pip uninstall -r -y installed.txt
     displayName: 'Build sdist'
 
   - script: pip install dist/*.tar.gz
