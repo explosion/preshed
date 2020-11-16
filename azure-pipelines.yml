@@ -78,8 +78,6 @@ jobs:
   - script: |
       python setup.py build_ext --inplace
       python setup.py sdist
-      pip freeze > installed.txt
-      pip uninstall -y -r installed.txt
     displayName: 'Build sdist'
 
   - script: |
