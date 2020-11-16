@@ -82,6 +82,11 @@ jobs:
       pip uninstall -y -r installed.txt
     displayName: 'Build sdist'
 
+  - script: |
+      pip freeze > installed.txt
+      pip uninstall -y -r installed.txt
+    displayName: 'Uninstall all packages'
+
   - script: pip install dist/*.tar.gz
     condition: in( variables['Agent.OS'], 'Linux', 'Darwin')
     displayName: 'Install from sdist (Linux, Mac)'
