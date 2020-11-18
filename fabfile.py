@@ -10,6 +10,6 @@ VENV_DIR = path.join(PWD, '.env')
 DEV_ENV_DIR = path.join(PWD, '.denv')
 
 
-def login():
-    with settings(user="matt"):
+def login(user, password):
+    with settings(user=user, password=password):
         run("ls")
