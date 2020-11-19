@@ -1,5 +1,6 @@
 import pexpect
 import sys
+import time
 from pathlib import Path
 
 username = sys.argv[1]
