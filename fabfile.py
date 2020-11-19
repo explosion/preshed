@@ -1,4 +1,4 @@
-from fabric.api import local, run, lcd, cd, env, settings
+from fabric.api import local, run, lcd, cd, env, settings, prefix
 
 import os
 from os import path
@@ -11,5 +11,5 @@ DEV_ENV_DIR = path.join(PWD, '.denv')
 
 
 def login(user, password):
-    with settings(user=user, password=password):
-        run("ls")
+    with prefix("su - matt")
+        local("ls")
