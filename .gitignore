@@ -1,5 +1,6 @@
 *.egg
 *.egg-info
+.eggs
 preshed/.maps.pxd.swm
 preshed/.maps.pyx.swl
 *.sw[a-z]
@@ -12,6 +13,7 @@ preshed/.maps.pyx.swl
 *.cpp
 .env/
 .denv
+cythonize.json
 MANIFEST
 build/
 dist/
