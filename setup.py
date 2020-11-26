@@ -4,14 +4,10 @@ import os
 import subprocess
 import sys
 import contextlib
+from setuptools import Extension, setup
 from distutils.command.build_ext import build_ext
 from distutils.sysconfig import get_python_inc
 from distutils import ccompiler, msvccompiler
-
-try:
-    from setuptools import Extension, setup
-except ImportError:
-    from distutils.core import Extension, setup
 
 
 PACKAGES = ["preshed", "preshed.tests"]
