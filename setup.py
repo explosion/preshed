@@ -117,7 +117,7 @@ def setup_package():
             name="preshed",
             zip_safe=False,
             packages=PACKAGES,
-            package_data={"": ["*.pyx", "*.pxd", "*.cpp"]},
+            package_data={"": ["*.pyx", "*.pxd"]},
             description=about["__summary__"],
             long_description=readme,
             long_description_content_type="text/markdown",
