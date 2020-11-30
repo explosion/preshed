@@ -87,7 +87,7 @@ def setup_package():
 
         ext_modules = []
         for mod_name in MOD_NAMES:
-            mod_path = mod_name.replace(".", "/") + ".cpp"
+            mod_path = mod_name.replace(".", "/") + ".pyx"
             ext_modules.append(
                 Extension(
                     mod_name, [mod_path], language="c++", include_dirs=include_dirs
