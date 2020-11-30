@@ -8,6 +8,7 @@ from setuptools import Extension, setup
 from distutils.command.build_ext import build_ext
 from distutils.sysconfig import get_python_inc
 from distutils import ccompiler, msvccompiler
+from Cython.Build import cythonize
 
 
 PACKAGES = ["preshed", "preshed.tests"]
@@ -39,19 +40,6 @@ class build_ext_subclass(build_ext, build_ext_options):
     def build_extensions(self):
         build_ext_options.build_options(self)
         build_ext.build_extensions(self)
-
-
-def generate_cython(root, source):
-    print("Cythonizing sources")
-    p = subprocess.call(
-        [sys.executable, os.path.join(root, "bin", "cythonize.py"), source]
-    )
-    if p != 0:
-        raise RuntimeError("Running cythonize failed")
-
-
-def is_source_release(path):
-    return os.path.exists(os.path.join(path, "PKG-INFO"))
 
 
 def clean(path):
@@ -106,9 +94,6 @@ def setup_package():
                 )
             )
 
-        if not is_source_release(root):
-            generate_cython(root, "preshed")
-
         setup(
             name="preshed",
             zip_safe=False,
@@ -122,7 +107,7 @@ def setup_package():
             version=about["__version__"],
             url=about["__uri__"],
             license=about["__license__"],
-            ext_modules=ext_modules,
+            ext_modules=cythonize(ext_modules),
             setup_requires=["cython>=0.28", "cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             install_requires=["cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             classifiers=[
