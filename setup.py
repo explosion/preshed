@@ -6,7 +6,6 @@ import contextlib
 from setuptools import Extension, setup
 from distutils.command.build_ext import build_ext
 from distutils.sysconfig import get_python_inc
-from distutils import ccompiler, msvccompiler
 from Cython.Build import cythonize
 
 
@@ -78,12 +77,6 @@ def setup_package():
 
         include_dirs = [get_python_inc(plat_specific=True)]
 
-        if (
-            ccompiler.new_compiler().compiler_type == "msvc"
-            and msvccompiler.get_build_version() == 9
-        ):
-            include_dirs.append(os.path.join(root, "include", "msvc9"))
-
         ext_modules = []
         for mod_name in MOD_NAMES:
             mod_path = mod_name.replace(".", "/") + ".pyx"
@@ -107,7 +100,7 @@ def setup_package():
             url=about["__uri__"],
             license=about["__license__"],
             ext_modules=cythonize(ext_modules, language_level=2),
-            setup_requires=["cython>=0.28", "cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
+            python_requires=">=3.6",
             install_requires=["cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             classifiers=[
                 "Environment :: Console",
@@ -118,8 +111,6 @@ def setup_package():
                 "Operating System :: MacOS :: MacOS X",
                 "Operating System :: Microsoft :: Windows",
                 "Programming Language :: Cython",
-                "Programming Language :: Python :: 2.7",
-                "Programming Language :: Python :: 3.5",
                 "Programming Language :: Python :: 3.6",
                 "Programming Language :: Python :: 3.7",
                 "Programming Language :: Python :: 3.8",
