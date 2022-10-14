@@ -10,7 +10,7 @@ jobs:
   strategy:
     matrix:
       Python36Linux:
-        imageName: 'ubuntu-18.04'
+        imageName: 'ubuntu-latest'
         python.version: '3.6'
       Python36Windows:
         imageName: 'windows-latest'
