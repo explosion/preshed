@@ -1,5 +1,5 @@
 __title__ = "preshed"
-__version__ = "3.0.7"
+__version__ = "3.0.8"
 __summary__ = "Cython hash table that trusts the keys are pre-hashed"
 __uri__ = "https://github.com/explosion/preshed"
 __author__ = "Explosion"
