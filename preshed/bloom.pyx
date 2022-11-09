@@ -3,7 +3,7 @@
 #
 from murmurhash.mrmr cimport hash128_x86
 import math
-from array import array
+import struct
 
 try:
     import copy_reg
@@ -54,31 +54,39 @@ cdef class BloomFilter:
 
 
 cdef bytes bloom_to_bytes(const BloomStruct* bloom):
-    py = array("L")
-    py.append(bloom.hcount)
-    py.append(bloom.length)
-    py.append(bloom.seed)
-    for i in range(bloom.length // sizeof(key_t)):
-        py.append(bloom.bitfield[i])
-    if hasattr(py, "tobytes"):
-        return py.tobytes()
-    else:
-        # Python 2 :(
-        return py.tostring()
+    prefix = struct.pack("<QQQ", bloom.hcount, bloom.length, bloom.seed)
+    buflen = bloom.length // sizeof(key_t)
+    contents = [bloom.bitfield[i] for i in range(buflen)]
+    buffer = struct.pack(f"<{buflen}Q", *contents)
+    return prefix + buffer
 
 
 cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
-    py = array("L")
-    if hasattr(py, "frombytes"):
-        py.frombytes(data)
-    else:
-        py.fromstring(data)
-    bloom.hcount = py[0]
-    bloom.length = py[1]
-    bloom.seed = py[2]
-    bloom.bitfield = <key_t*>mem.alloc(bloom.length // sizeof(key_t), sizeof(key_t))
-    for i in range(bloom.length // sizeof(key_t)):
-        bloom.bitfield[i] = py[3+i]
+    hcount, length, seed = struct.unpack("<QQQ", data[0:24])
+    bloom.hcount = hcount
+    bloom.length = length # in bytes
+    bloom.seed = seed
+
+    # on non-Windows platforms
+    unit = "Q"
+    offset = 24
+    # legacy check
+    if length != len(data) - 24:
+        # This can happen if the data was serialized on Windows, where the units
+        # were 32bit rather than 64bit.
+        hcount, length, seed = struct.unpack("<LLL", data[0:12])
+        # data includes the prefix and bitfield, so add 3
+        assert (length // 4) + 3 == len(data), "Length is invalid"
+
+        # change params to work with Windows data
+        unit = "L"
+        offset = 12
+
+    buflen = length // sizeof(key_t)
+    contents = struct.unpack(f"<{buflen}{unit}", data[offset:])
+    bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
+    for i in range(buflen):
+        bloom.bitfield[i] = contents[i]
 
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
