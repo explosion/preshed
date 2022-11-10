@@ -97,12 +97,12 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
 cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
     hcount, length, seed = struct.unpack("<QQQ", data[0:24])
     bloom.hcount = hcount
-    bloom.length = length # in bits
+    bloom.length = length # in bytes in serialization, but bits after
     bloom.seed = seed
 
     # on non-Windows platforms
     unit = "Q"
-    offset = 24
+    unit_size = 8
     # legacy check
     if length != len(data) - 24:
         # This can happen if the data was serialized on Windows, where the units
@@ -117,12 +117,14 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
 
         # change params to work with Windows data
         unit = "L"
-        offset = 12
+        unit_size = 4
 
     # This is tricky - to remove empty space we're going to map bytes into
     # containers.
+    decode_len = length // unit_size
     buflen = length // KEY_BITS
-    contents = struct.unpack(f"<{buflen}{unit}", data[offset:])
+    offset = unit_size * 3
+    contents = struct.unpack(f"<{decode_len}{unit}", data[offset:])
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
     for i in range(len(contents)):
         block = i // 8
