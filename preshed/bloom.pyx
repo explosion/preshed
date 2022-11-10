@@ -10,6 +10,8 @@ try:
 except ImportError:
     import copyreg as copy_reg
 
+# TODO better way to declare constant?
+cdef key_t KEY_BITS = 8 * sizeof(key_t)
 
 def calculate_size_and_hash_count(members, error_rate):
     """Calculate the optimal size in bits and number of hash functions for a
@@ -54,17 +56,48 @@ cdef class BloomFilter:
 
 
 cdef bytes bloom_to_bytes(const BloomStruct* bloom):
-    prefix = struct.pack("<QQQ", bloom.hcount, bloom.length, bloom.seed)
-    buflen = bloom.length // sizeof(key_t)
+    cdef key_t pad = 0 # to differentiate new from old data format
+    cdef key_t version = 1 # hardcoded, can be incremented
+    prefix = struct.pack("<QQQQQ", pad, version, bloom.hcount, bloom.length, bloom.seed)
+    buflen = bloom.length // KEY_BITS
     contents = [bloom.bitfield[i] for i in range(buflen)]
     buffer = struct.pack(f"<{buflen}Q", *contents)
     return prefix + buffer
 
 
 cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
+    # new-style memory structure (each unit is a key_t/64 bits):
+    # - pad1: 0 (not valid in old data)
+    # - ver: 1 (can be raised later if necessary
+    # (following values are same as old-style, except length semantics changed)
+    # - hcount: number of hashes
+    # - length: bitfield length in bits
+    # - seed: seed value for hashes
+
+    if len(data) < 40:
+        # unlikely but possible with old data
+        bloom_from_bytes_legacy(mem, bloom, data)
+        return
+    pad, ver, hcount, length, seed = struct.unpack("<QQQQQ", data[0:40])
+    if pad !=0:
+        bloom_from_bytes_legacy(mem, bloom, data)
+        return
+    assert ver == 1, "Unknown serialization version"
+
+    bloom.hcount = hcount
+    bloom.length = length
+    bloom.seed = seed
+    buflen = length // KEY_BITS
+    contents = struct.unpack(f"<{buflen}Q", data[40:])
+    bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
+    for i in range(buflen):
+        bloom.bitfield[i] = contents[i]
+
+
+cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
     hcount, length, seed = struct.unpack("<QQQ", data[0:24])
     bloom.hcount = hcount
-    bloom.length = length # in bytes
+    bloom.length = length # in bits
     bloom.seed = seed
 
     # on non-Windows platforms
@@ -78,24 +111,32 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
         # data includes the prefix and bitfield, so add 3
         assert (length // 4) + 3 == len(data), "Length is invalid"
 
+        bloom.hcount = hcount
+        bloom.length = length
+        bloom.seed = seed
+
         # change params to work with Windows data
         unit = "L"
         offset = 12
 
-    buflen = length // sizeof(key_t)
+    # This is tricky - to remove empty space we're going to map bytes into
+    # containers.
+    buflen = length // KEY_BITS
     contents = struct.unpack(f"<{buflen}{unit}", data[offset:])
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
-    for i in range(buflen):
-        bloom.bitfield[i] = contents[i]
+    for i in range(len(contents)):
+        block = i // 8
+        idx = i % 8
+        bloom.bitfield[block] |= contents[i] << (8 * idx)
 
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
     # size should be a multiple of the container size - round up
-    if length % sizeof(key_t):
-        length = math.ceil(length / sizeof(key_t)) * sizeof(key_t)
-    bloom.length = length
+    if length % KEY_BITS:
+        length = math.ceil(length / KEY_BITS) * KEY_BITS
+    bloom.length = length # this is a bit value
     bloom.hcount = hcount
-    bloom.bitfield = <key_t*>mem.alloc(length // sizeof(key_t), sizeof(key_t))
+    bloom.bitfield = <key_t*>mem.alloc(length // KEY_BITS, sizeof(key_t))
     bloom.seed = seed
 
 
@@ -117,8 +158,9 @@ cdef void bloom_add(BloomStruct* bloom, key_t item) nogil:
     cdef key_t one = 1 # We want this explicitly typed, because bits
     hash128_x86(&item, sizeof(key_t), 0, &keys)
     for hiter in range(bloom.hcount):
-        hv = (keys[0] + (hiter * keys[1])) % bloom.length
-        bloom.bitfield[hv // sizeof(key_t)] |= one << (hv % sizeof(key_t))
+        hv = (keys[0] + (hiter * keys[1])) % bloom.length # length is in BITS
+        #bloom.bitfield[hv // sizeof(key_t)] |= one << (hv % sizeof(key_t))
+        bloom.bitfield[hv // KEY_BITS] |= one << (hv % KEY_BITS)
 
 
 cdef bint bloom_contains(const BloomStruct* bloom, key_t item) nogil:
@@ -127,8 +169,8 @@ cdef bint bloom_contains(const BloomStruct* bloom, key_t item) nogil:
     cdef key_t one = 1 # We want this explicitly typed, because bits
     hash128_x86(&item, sizeof(key_t), 0, &keys)
     for hiter in range(bloom.hcount):
-        hv = (keys[0] + (hiter * keys[1])) % bloom.length
-        if not (bloom.bitfield[hv // sizeof(key_t)] & one << (hv % sizeof(key_t))):
+        hv = (keys[0] + (hiter * keys[1])) % bloom.length # length is in BITS
+        if not (bloom.bitfield[hv // KEY_BITS] & one << (hv % KEY_BITS)):
             return False
     return True
 
