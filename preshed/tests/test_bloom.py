@@ -70,7 +70,6 @@ def test_bloom_from_bytes_legacy():
         assert ii in bf
 
 
-@pytest.mark.skip
 def test_bloom_from_bytes_legacy_windows():
 
     # This is the output from the tests in the legacy Windows format.

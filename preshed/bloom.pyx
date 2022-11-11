@@ -95,41 +95,60 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
 
 
 cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
-    hcount, length, seed = struct.unpack("<QQQ", data[0:24])
-    bloom.hcount = hcount
-    bloom.length = length # in bytes in serialization, but bits after
-    bloom.seed = seed
+    # Older versions of this library used the array module with type L for
+    # serialization. Types in array guarantee a minimum size, not an actual
+    # size, and it turns out L is 8 bytes on Linux and most platforms, but 4 on
+    # Windows. 
+
+    # As a separate issue, due to bits/bytes confusion, each container in the
+    # serialized data has only one byte actually used.
+
+    # The code in this function reads in data in the old format and converts it
+    # to the current format losslessly. It also packs the significant bytes into
+    # contiguous memory.
 
     # on non-Windows platforms
     unit = "Q"
-    unit_size = 8
-    # legacy check
+    unit_size = 8 # size of container in bytes
+    offset = unit_size * 3
+    hcount, length, seed = struct.unpack("<QQQ", data[0:offset])
+
+    decode_len = length // unit_size # number of units to unpack
+
     if length != len(data) - 24:
         # This can happen if the data was serialized on Windows, where the units
         # were 32bit rather than 64bit.
-        hcount, length, seed = struct.unpack("<LLL", data[0:12])
-        # data includes the prefix and bitfield, so add 3
-        assert (length // 4) + 3 == len(data), "Length is invalid"
-
-        bloom.hcount = hcount
-        bloom.length = length
-        bloom.seed = seed
-
-        # change params to work with Windows data
         unit = "L"
         unit_size = 4
+        offset = unit_size * 3
+        hcount, length, seed = struct.unpack("<LLL", data[0:offset])
+
+        # The length was the number bytes in memory. But because of the
+        # platform size issue, the actual serialized bytes is half that.
+
+        assert length // 2 == len(data) - offset, "Length is invalid"
+
+        decode_len = length // (2 * unit_size)
+
+    bloom.hcount = hcount
+    bloom.length = length
+    bloom.seed = seed
 
     # This is tricky - to remove empty space we're going to map bytes into
-    # containers.
-    decode_len = length // unit_size
+    # containers. On Windows or Linux, length is both the number of significant
+    # bits in the bitfield and the number of bytes when the bitfield was in
+    # memory in the old format. In our output, length will be the bitfield
+    # length in bits.
     buflen = length // KEY_BITS
-    offset = unit_size * 3
     contents = struct.unpack(f"<{decode_len}{unit}", data[offset:])
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
+
+    # Each item in contents provides one significant byte, so we'll copy it
+    # into the containers.
     for i in range(len(contents)):
-        block = i // 8
-        idx = i % 8
-        bloom.bitfield[block] |= contents[i] << (8 * idx)
+        block = i // sizeof(key_t)
+        idx = i % sizeof(key_t)
+        bloom.bitfield[block] |= contents[i] << (sizeof(key_t) * idx)
 
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
