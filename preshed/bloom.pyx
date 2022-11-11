@@ -150,7 +150,7 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
     for i in range(len(contents)):
         block = i // sizeof(key_t)
         idx = i % sizeof(key_t)
-        bloom.bitfield[block] |= contents[i] << (sizeof(key_t) * idx)
+        bloom.bitfield[block] |= contents[i] << (8 * idx)
 
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
