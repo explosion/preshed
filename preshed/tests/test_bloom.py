@@ -81,3 +81,8 @@ def test_bloom_from_bytes_legacy_windows():
     bf = BloomFilter().from_bytes(data)
     for ii in range(0, 1000, 20):
         assert ii in bf
+
+
+def test_bloom_invalid_args():
+    with pytest.raises(AssertionError):
+        bf = BloomFilter(0, 0)

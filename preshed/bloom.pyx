@@ -29,6 +29,8 @@ cdef class BloomFilter:
     Only integers are supported as keys.
     """
     def __init__(self, key_t size=(2 ** 10), key_t hash_funcs=23, uint32_t seed=0):
+        assert size > 0, "Size must be greater than zero"
+        assert hash_funcs > 0, "Hash function count must be greater than zero"
         self.mem = Pool()
         self.c_bloom = <BloomStruct*>self.mem.alloc(1, sizeof(BloomStruct))
         bloom_init(self.mem, self.c_bloom, hash_funcs, size, seed)
