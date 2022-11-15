@@ -70,8 +70,8 @@ def test_bloom_from_bytes_legacy():
         assert ii in bf
 
 
+@pytest.mark.skip(reason="Attempting to isolate segfault")
 def test_bloom_from_bytes_legacy_windows():
-
     # This is the output from the tests in the legacy Windows format.
     # This is the same as the data in the normal test, but missing the second
     # half of each container.
