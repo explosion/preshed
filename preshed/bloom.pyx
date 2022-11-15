@@ -76,13 +76,13 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     # - length: bitfield length in bits
     # - seed: seed value for hashes
 
-    if len(data) < 40:
+    #if len(data) < 40:
         # unlikely but possible with old data
-        bloom_from_bytes_legacy(mem, bloom, data)
-        return
+    #    bloom_from_bytes_legacy(mem, bloom, data)
+    #    return
     pad, ver, hcount, length, seed = struct.unpack("<QQQQQ", data[0:40])
     if pad !=0:
-        bloom_from_bytes_legacy(mem, bloom, data)
+        #bloom_from_bytes_legacy(mem, bloom, data)
         return
     assert ver == 1, "Unknown serialization version"
 

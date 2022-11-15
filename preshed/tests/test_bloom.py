@@ -61,7 +61,6 @@ def test_bloom_pickle():
         assert ii in bf2
 
 
-@pytest.mark.skip(reason="Attempting to isolate segfault")
 def test_bloom_from_bytes_legacy():
     # This is the output from the tests in the legacy format
     data = "0200000000000000600000000000000000000000000000003300000000000000e100000000000000b200000000000000da00000000000000e700000000000000e600000000000000ff000000000000004700000000000000e7000000000000004c000000000000003b00000000000000f700000000000000"
@@ -71,7 +70,6 @@ def test_bloom_from_bytes_legacy():
         assert ii in bf
 
 
-@pytest.mark.skip(reason="Attempting to isolate segfault")
 def test_bloom_from_bytes_legacy_windows():
     # This is the output from the tests in the legacy Windows format.
     # This is the same as the data in the normal test, but missing the second
