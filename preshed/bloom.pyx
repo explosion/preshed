@@ -91,6 +91,7 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     bloom.seed = seed
     buflen = length // KEY_BITS
     contents = struct.unpack(f"<{buflen}Q", data[40:])
+    assert buflen > 0, "Tried to allocate an empty buffer"
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
     for i in range(buflen):
         bloom.bitfield[i] = contents[i]
@@ -143,6 +144,7 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
     # length in bits.
     buflen = length // KEY_BITS
     contents = struct.unpack(f"<{decode_len}{unit}", data[offset:])
+    assert buflen > 0, "Tried to allocate an empty buffer"
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
 
     # Each item in contents provides one significant byte, so we'll copy it
@@ -159,7 +161,9 @@ cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, u
         length = math.ceil(length / KEY_BITS) * KEY_BITS
     bloom.length = length # this is a bit value
     bloom.hcount = hcount
-    bloom.bitfield = <key_t*>mem.alloc(length // KEY_BITS, sizeof(key_t))
+    buflen = length // KEY_BITS
+    assert buflen > 0, "Tried to allocate an empty buffer"
+    bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
     bloom.seed = seed
 
 
