@@ -182,7 +182,6 @@ cdef void bloom_add(BloomStruct* bloom, key_t item) nogil:
     hash128_x86(&item, sizeof(key_t), 0, &keys)
     for hiter in range(bloom.hcount):
         hv = (keys[0] + (hiter * keys[1])) % bloom.length # length is in BITS
-        #bloom.bitfield[hv // sizeof(key_t)] |= one << (hv % sizeof(key_t))
         bloom.bitfield[hv // KEY_BITS] |= one << (hv % KEY_BITS)
 
 
