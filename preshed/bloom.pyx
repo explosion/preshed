@@ -82,7 +82,7 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     #    return
     pad, ver, hcount, length, seed = struct.unpack("<QQQQQ", data[0:40])
     if pad !=0:
-        #bloom_from_bytes_legacy(mem, bloom, data)
+        bloom_from_bytes_legacy(mem, bloom, data)
         return
     assert ver == 1, "Unknown serialization version"
 
@@ -118,20 +118,20 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
 
     decode_len = length // unit_size # number of units to unpack
 
-    if length != len(data) - 24:
-        # This can happen if the data was serialized on Windows, where the units
-        # were 32bit rather than 64bit.
-        unit = "L"
-        unit_size = 4
-        offset = unit_size * 3
-        hcount, length, seed = struct.unpack("<LLL", data[0:offset])
+    #if length != len(data) - 24:
+    #    # This can happen if the data was serialized on Windows, where the units
+    #    # were 32bit rather than 64bit.
+    #    unit = "L"
+    #    unit_size = 4
+    #    offset = unit_size * 3
+    #    hcount, length, seed = struct.unpack("<LLL", data[0:offset])
 
-        # The length was the number bytes in memory. But because of the
-        # platform size issue, the actual serialized bytes is half that.
+    #    # The length was the number bytes in memory. But because of the
+    #    # platform size issue, the actual serialized bytes is half that.
 
-        assert length // 2 == len(data) - offset, "Length is invalid"
+    #    assert length // 2 == len(data) - offset, "Length is invalid"
 
-        decode_len = length // (2 * unit_size)
+    #    decode_len = length // (2 * unit_size)
 
     bloom.hcount = hcount
     bloom.length = length
