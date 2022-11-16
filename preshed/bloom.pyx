@@ -76,10 +76,10 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     # - length: bitfield length in bits
     # - seed: seed value for hashes
 
-    #if len(data) < 40:
+    if len(data) < 40:
         # unlikely but possible with old data
-    #    bloom_from_bytes_legacy(mem, bloom, data)
-    #    return
+        bloom_from_bytes_legacy(mem, bloom, data)
+        return
     pad, ver, hcount, length, seed = struct.unpack("<QQQQQ", data[0:40])
     if pad !=0:
         bloom_from_bytes_legacy(mem, bloom, data)
@@ -88,7 +88,11 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
 
     bloom.hcount = hcount
     bloom.length = length
-    bloom.seed = seed
+    # To avoid overflow, just take the low bits. In valid data nothing will be
+    # lost.
+    cdef uint32_t safe_seed = int.from_bytes(seed.to_bytes(8, 'big')[-4:], 'big')
+    bloom.seed = safe_seed
+
     buflen = length // KEY_BITS
     contents = struct.unpack(f"<{buflen}Q", data[40:])
     assert buflen > 0, "Tried to allocate an empty buffer"
@@ -118,24 +122,24 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
 
     decode_len = length // unit_size # number of units to unpack
 
-    #if length != len(data) - 24:
-    #    # This can happen if the data was serialized on Windows, where the units
-    #    # were 32bit rather than 64bit.
-    #    unit = "L"
-    #    unit_size = 4
-    #    offset = unit_size * 3
-    #    hcount, length, seed = struct.unpack("<LLL", data[0:offset])
+    if length != len(data) - 24:
+        # This can happen if the data was serialized on Windows, where the units
+        # were 32bit rather than 64bit.
+        unit = "L"
+        unit_size = 4
+        offset = unit_size * 3
+        hcount, length, seed = struct.unpack("<LLL", data[0:offset])
 
-    #    # The length was the number bytes in memory. But because of the
-    #    # platform size issue, the actual serialized bytes is half that.
+        # The length was the number bytes in memory. But because of the
+        # platform size issue, the actual serialized bytes is half that.
+        assert length // 2 == len(data) - offset, "Length is invalid"
 
-    #    assert length // 2 == len(data) - offset, "Length is invalid"
-
-    #    decode_len = length // (2 * unit_size)
+        decode_len = length // (2 * unit_size)
 
     bloom.hcount = hcount
     bloom.length = length
-    bloom.seed = seed
+    cdef uint32_t safe_seed = int.from_bytes(seed.to_bytes(8, 'big')[-4:], 'big')
+    bloom.seed = safe_seed
 
     # This is tricky - to remove empty space we're going to map bytes into
     # containers. On Windows or Linux, length is both the number of significant
