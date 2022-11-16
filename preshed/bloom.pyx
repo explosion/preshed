@@ -142,7 +142,7 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
     # bits in the bitfield and the number of bytes when the bitfield was in
     # memory in the old format. In our output, length will be the bitfield
     # length in bits.
-    buflen = length // KEY_BITS
+    buflen = math.ceil(length / KEY_BITS)
     contents = struct.unpack(f"<{decode_len}{unit}", data[offset:])
     assert buflen > 0, "Tried to allocate an empty buffer"
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
