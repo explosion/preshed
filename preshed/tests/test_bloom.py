@@ -68,6 +68,11 @@ def test_bloom_from_bytes_legacy():
     bf = BloomFilter().from_bytes(data)
     for ii in range(0, 1000, 20):
         assert ii in bf
+    data2 = bf.to_bytes()
+    bf2 = BloomFilter()
+    bf2.from_bytes(data2)
+    for ii in range(0, 1000, 20):
+        assert ii in bf2
 
 
 def test_bloom_from_bytes_legacy_windows():
@@ -80,6 +85,11 @@ def test_bloom_from_bytes_legacy_windows():
     bf = BloomFilter().from_bytes(data)
     for ii in range(0, 1000, 20):
         assert ii in bf
+    data2 = bf.to_bytes()
+    bf2 = BloomFilter()
+    bf2.from_bytes(data2)
+    for ii in range(0, 1000, 20):
+        assert ii in bf2
 
 
 def test_bloom_invalid_args():
