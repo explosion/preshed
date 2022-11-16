@@ -61,9 +61,12 @@ cdef bytes bloom_to_bytes(const BloomStruct* bloom):
     cdef key_t pad = 0 # to differentiate new from old data format
     cdef key_t version = 1 # hardcoded, can be incremented
     prefix = struct.pack("<QQQQQ", pad, version, bloom.hcount, bloom.length, bloom.seed)
-    # note that math.ceil is only required for data that has come from legacy
-    # deserialization - otherwise length is always a multiple of KEY_BITS.
-    buflen = math.ceil(bloom.length / KEY_BITS)
+    # note that the modulus check is only required for data that has come from
+    # legacy deserialization - otherwise length is always a multiple of
+    # KEY_BITS.
+    buflen = bloom.length // KEY_BITS
+    if bloom.length % KEY_BITS > 0:
+        buflen += 1
     contents = [bloom.bitfield[i] for i in range(buflen)]
     buffer = struct.pack(f"<{buflen}Q", *contents)
     return prefix + buffer
@@ -96,6 +99,8 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     bloom.seed = safe_seed
 
     buflen = length // KEY_BITS
+    if length % KEY_BITS > 0:
+        buflen += 1
     contents = struct.unpack(f"<{buflen}Q", data[40:])
     assert buflen > 0, "Tried to allocate an empty buffer"
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
@@ -148,7 +153,9 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
     # bits in the bitfield and the number of bytes when the bitfield was in
     # memory in the old format. In our output, length will be the bitfield
     # length in bits.
-    buflen = math.ceil(length / KEY_BITS)
+    buflen = length // KEY_BITS
+    if length % KEY_BITS > 0:
+        buflen += 1
     contents = struct.unpack(f"<{decode_len}{unit}", data[offset:])
     assert buflen > 0, "Tried to allocate an empty buffer"
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
@@ -164,7 +171,7 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
     # size should be a multiple of the container size - round up
     if length % KEY_BITS:
-        length = math.ceil(length / KEY_BITS) * KEY_BITS
+        length = ((length // KEY_BITS) + 1) * KEY_BITS
     bloom.length = length # this is a bit value
     bloom.hcount = hcount
     buflen = length // KEY_BITS
