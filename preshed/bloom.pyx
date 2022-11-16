@@ -61,7 +61,9 @@ cdef bytes bloom_to_bytes(const BloomStruct* bloom):
     cdef key_t pad = 0 # to differentiate new from old data format
     cdef key_t version = 1 # hardcoded, can be incremented
     prefix = struct.pack("<QQQQQ", pad, version, bloom.hcount, bloom.length, bloom.seed)
-    buflen = bloom.length // KEY_BITS
+    # note that math.ceil is only required for data that has come from legacy
+    # deserialization - otherwise length is always a multiple of KEY_BITS.
+    buflen = math.ceil(bloom.length / KEY_BITS)
     contents = [bloom.bitfield[i] for i in range(buflen)]
     buffer = struct.pack(f"<{buflen}Q", *contents)
     return prefix + buffer
