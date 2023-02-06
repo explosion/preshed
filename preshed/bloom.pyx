@@ -61,6 +61,7 @@ cdef class BloomFilter:
 
 cdef bytes bloom_to_bytes(const BloomStruct* bloom):
     cdef key_t pad = 0 # to differentiate new from old data format
+    cdef key_t buflen
     prefix = struct.pack("<QQQQQ", pad, VERSION, bloom.hcount, bloom.length, bloom.seed)
     # note that the modulus check is only required for data that has come from
     # legacy deserialization - otherwise length is always a multiple of
@@ -99,7 +100,7 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     cdef uint32_t safe_seed = int.from_bytes(seed.to_bytes(8, 'big')[-4:], 'big')
     bloom.seed = safe_seed
 
-    buflen = length // KEY_BITS
+    cdef key_t buflen = length // KEY_BITS
     if length % KEY_BITS > 0:
         buflen += 1
     contents = struct.unpack(f"<{buflen}Q", data[40:])
