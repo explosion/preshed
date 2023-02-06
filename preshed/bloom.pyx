@@ -10,8 +10,10 @@ try:
 except ImportError:
     import copyreg as copy_reg
 
-# TODO better way to declare constant?
-cdef key_t KEY_BITS = 8 * sizeof(key_t)
+cdef enum:
+    KEY_BITS = 8 * sizeof(key_t)
+    VERSION = 1
+
 
 def calculate_size_and_hash_count(members, error_rate):
     """Calculate the optimal size in bits and number of hash functions for a
@@ -59,8 +61,7 @@ cdef class BloomFilter:
 
 cdef bytes bloom_to_bytes(const BloomStruct* bloom):
     cdef key_t pad = 0 # to differentiate new from old data format
-    cdef key_t version = 1 # hardcoded, can be incremented
-    prefix = struct.pack("<QQQQQ", pad, version, bloom.hcount, bloom.length, bloom.seed)
+    prefix = struct.pack("<QQQQQ", pad, VERSION, bloom.hcount, bloom.length, bloom.seed)
     # note that the modulus check is only required for data that has come from
     # legacy deserialization - otherwise length is always a multiple of
     # KEY_BITS.
@@ -75,7 +76,7 @@ cdef bytes bloom_to_bytes(const BloomStruct* bloom):
 cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     # new-style memory structure (each unit is a key_t/64 bits):
     # - pad1: 0 (not valid in old data)
-    # - ver: 1 (can be raised later if necessary
+    # - VERSION: 1 (can be raised later if necessary
     # (following values are same as old-style, except length semantics changed)
     # - hcount: number of hashes
     # - length: bitfield length in bits
@@ -89,7 +90,7 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     if pad !=0:
         bloom_from_bytes_legacy(mem, bloom, data)
         return
-    assert ver == 1, "Unknown serialization version"
+    assert ver == VERSION, "Unknown serialization version"
 
     bloom.hcount = hcount
     bloom.length = length
