@@ -106,8 +106,7 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     bloom.length = length
     # To avoid overflow, just take the low bits. In valid data nothing will be
     # lost.
-    cdef uint32_t safe_seed = int.from_bytes(seed.to_bytes(8, 'big')[-4:], 'big')
-    bloom.seed = safe_seed
+    bloom.seed = <uint32_t>seed
 
     cdef key_t buflen = length // KEY_BITS
     if length % KEY_BITS > 0:
