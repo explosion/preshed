@@ -10,9 +10,18 @@ try:
 except ImportError:
     import copyreg as copy_reg
 
+
+cdef str FORMAT = "<QQQQQ"
+# this can't be in the enum because it depends on a string
+cdef uint32_t STRUCT_SIZE = struct.calcsize(FORMAT)
+
 cdef enum:
     KEY_BITS = 8 * sizeof(key_t)
     VERSION = 1
+    LEGACY_UNIT_SIZE = 8
+    LEGACY_OFFSET = 24 # 8 * 3
+    LEGACY_WINDOWS_UNIT_SIZE = 4
+    LEGACY_WINDOWS_OFFSET = 12 # 4 * 3
 
 
 def calculate_size_and_hash_count(members, error_rate):
@@ -62,7 +71,7 @@ cdef class BloomFilter:
 cdef bytes bloom_to_bytes(const BloomStruct* bloom):
     cdef key_t pad = 0 # to differentiate new from old data format
     cdef key_t buflen
-    prefix = struct.pack("<QQQQQ", pad, VERSION, bloom.hcount, bloom.length, bloom.seed)
+    prefix = struct.pack(FORMAT, pad, VERSION, bloom.hcount, bloom.length, bloom.seed)
     # note that the modulus check is only required for data that has come from
     # legacy deserialization - otherwise length is always a multiple of
     # KEY_BITS.
@@ -83,11 +92,11 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     # - length: bitfield length in bits
     # - seed: seed value for hashes
 
-    if len(data) < 40:
+    if len(data) < STRUCT_SIZE:
         # unlikely but possible with old data
         bloom_from_bytes_legacy(mem, bloom, data)
         return
-    pad, ver, hcount, length, seed = struct.unpack("<QQQQQ", data[0:40])
+    pad, ver, hcount, length, seed = struct.unpack(FORMAT, data[0:STRUCT_SIZE])
     if pad !=0:
         bloom_from_bytes_legacy(mem, bloom, data)
         return
@@ -103,7 +112,7 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     cdef key_t buflen = length // KEY_BITS
     if length % KEY_BITS > 0:
         buflen += 1
-    contents = struct.unpack(f"<{buflen}Q", data[40:])
+    contents = struct.unpack(f"<{buflen}Q", data[STRUCT_SIZE:])
     assert buflen > 0, "Tried to allocate an empty buffer"
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
     for i in range(buflen):
@@ -125,30 +134,31 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
 
     # on non-Windows platforms
     unit = "Q"
-    unit_size = 8 # size of container in bytes
-    offset = unit_size * 3
+    unit_size = LEGACY_UNIT_SIZE # size of container in bytes
+    cdef uint32_t offset = LEGACY_OFFSET
+
     hcount, length, seed = struct.unpack("<QQQ", data[0:offset])
 
-    decode_len = length // unit_size # number of units to unpack
-
-    if length != len(data) - 24:
+    if length != len(data) - LEGACY_OFFSET:
         # This can happen if the data was serialized on Windows, where the units
         # were 32bit rather than 64bit.
         unit = "L"
-        unit_size = 4
-        offset = unit_size * 3
+        unit_size = LEGACY_WINDOWS_UNIT_SIZE
+        offset = LEGACY_WINDOWS_OFFSET
         hcount, length, seed = struct.unpack("<LLL", data[0:offset])
 
-        # The length was the number bytes in memory. But because of the
+        # The length was the number of bytes in memory. But because of the
         # platform size issue, the actual serialized bytes is half that.
         assert length // 2 == len(data) - offset, "Length is invalid"
 
-        decode_len = length // (2 * unit_size)
+    # This is the same in either case because the Windows code was written
+    # without being aware of the difference in size between Windows and
+    # non-Windows.
+    decode_len = length // LEGACY_UNIT_SIZE
 
     bloom.hcount = hcount
     bloom.length = length
-    cdef uint32_t safe_seed = int.from_bytes(seed.to_bytes(8, 'big')[-4:], 'big')
-    bloom.seed = safe_seed
+    bloom.seed = <uint32_t>seed
 
     # This is tricky - to remove empty space we're going to map bytes into
     # containers. On Windows or Linux, length is both the number of significant
