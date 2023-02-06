@@ -96,5 +96,5 @@ jobs:
 
   - script: |
       pip install -r requirements.txt
-      python -m pytest preshed
+      python -X dev -m pytest preshed
     displayName: 'Run tests'
