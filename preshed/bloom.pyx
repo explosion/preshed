@@ -11,7 +11,7 @@ except ImportError:
     import copyreg as copy_reg
 
 
-cdef str FORMAT = "<QQQQQ"
+cdef str FORMAT = "<QQQQL"
 # this can't be in the enum because it depends on a string
 cdef uint32_t STRUCT_SIZE = struct.calcsize(FORMAT)
 
