@@ -78,8 +78,7 @@ cdef bytes bloom_to_bytes(const BloomStruct* bloom):
     buflen = bloom.length // KEY_BITS
     if bloom.length % KEY_BITS > 0:
         buflen += 1
-    contents = [bloom.bitfield[i] for i in range(buflen)]
-    buffer = struct.pack(f"<{buflen}Q", *contents)
+    buffer = (<char*>bloom.bitfield)[0:buflen * sizeof(key_t)]
     return prefix + buffer
 
 
