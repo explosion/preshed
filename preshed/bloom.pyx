@@ -1,6 +1,7 @@
 # cython: infer_types=True
 # cython: cdivision=True
 #
+from libc.string cimport memcpy
 from murmurhash.mrmr cimport hash128_x86
 import math
 import struct
@@ -103,18 +104,18 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
 
     bloom.hcount = hcount
     bloom.length = length
-    # To avoid overflow, just take the low bits. In valid data nothing will be
+    # Technically overflow is possible here, but in valid data nothing will be
     # lost.
     bloom.seed = <uint32_t>seed
 
     cdef key_t buflen = length // KEY_BITS
     if length % KEY_BITS > 0:
         buflen += 1
-    contents = struct.unpack(f"<{buflen}Q", data[STRUCT_SIZE:])
     assert buflen > 0, "Tried to allocate an empty buffer"
+
+    contents = data[STRUCT_SIZE:]
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
-    for i in range(buflen):
-        bloom.bitfield[i] = contents[i]
+    memcpy(bloom.bitfield, <char*>contents, sizeof(key_t) * buflen)
 
 
 cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
