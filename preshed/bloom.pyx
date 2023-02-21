@@ -129,7 +129,7 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
     # serialized data has only one byte actually used.
 
     # The code in this function reads in data in the old format and converts it
-    # to the current format losslessly. It also packs the significant bytes into
+    # to the current format losslessly. It also packs the actually used bytes into
     # contiguous memory.
 
     # on non-Windows platforms
@@ -161,10 +161,11 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
     bloom.seed = <uint32_t>seed
 
     # This is tricky - to remove empty space we're going to map bytes into
-    # containers. On Windows or Linux, length is both the number of significant
-    # bits in the bitfield and the number of bytes when the bitfield was in
-    # memory in the old format. In our output, length will be the bitfield
+    # containers. On Windows or Linux, length is both the number of actually
+    # used bits in the bitfield and the number of bytes when the bitfield was
+    # in memory in the old format. In our output, length will be the bitfield
     # length in bits.
+
     buflen = length // KEY_BITS
     if length % KEY_BITS > 0:
         buflen += 1
@@ -172,7 +173,7 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
     assert buflen > 0, "Tried to allocate an empty buffer"
     bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
 
-    # Each item in contents provides one significant byte, so we'll copy it
+    # Each item in contents provides one actually used byte, so we'll copy it
     # into the containers.
     for i in range(len(contents)):
         block = i // sizeof(key_t)
