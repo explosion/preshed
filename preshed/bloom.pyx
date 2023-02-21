@@ -100,7 +100,8 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     if pad != 0:
         bloom_from_bytes_legacy(mem, bloom, data)
         return
-    assert ver == VERSION, "Unknown serialization version"
+    if ver != VERSION:
+        raise ValueError("Unknown serialization version")
 
     bloom.hcount = hcount
     bloom.length = length
