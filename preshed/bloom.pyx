@@ -97,7 +97,7 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
         bloom_from_bytes_legacy(mem, bloom, data)
         return
     pad, ver, hcount, length, seed = struct.unpack(FORMAT, data[0:STRUCT_SIZE])
-    if pad !=0:
+    if pad != 0:
         bloom_from_bytes_legacy(mem, bloom, data)
         return
     assert ver == VERSION, "Unknown serialization version"
