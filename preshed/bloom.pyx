@@ -44,9 +44,8 @@ cdef class BloomFilter:
     def __init__(self, key_t size=(2 ** 10), key_t hash_funcs=23, uint32_t seed=0):
         assert size > 0, "Size must be greater than zero"
         assert hash_funcs > 0, "Hash function count must be greater than zero"
-        self.mem = Pool()
-        self.c_bloom = <BloomStruct*>self.mem.alloc(1, sizeof(BloomStruct))
-        bloom_init(self.c_bloom, hash_funcs, size, seed)
+        self.c_bloom = make_unique[BloomStruct]()
+        bloom_init(self.c_bloom.get(), hash_funcs, size, seed)
 
     @classmethod
     def from_error_rate(cls, members, error_rate=1E-4):
@@ -54,19 +53,19 @@ cdef class BloomFilter:
         return cls(*params)
 
     def add(self, key_t item):
-        bloom_add(self.c_bloom, item)
+        bloom_add(self.c_bloom.get(), item)
 
     def __contains__(self, item):
-        return bloom_contains(self.c_bloom, item)
+        return bloom_contains(self.c_bloom.get(), item)
 
     cdef inline bint contains(self, key_t item) nogil:
-        return bloom_contains(self.c_bloom, item)
+        return bloom_contains(self.c_bloom.get(), item)
 
     def to_bytes(self):
-        return bloom_to_bytes(self.c_bloom)
+        return bloom_to_bytes(self.c_bloom.get())
 
     def from_bytes(self, bytes byte_string):
-        bloom_from_bytes(self.c_bloom, byte_string)
+        bloom_from_bytes(self.c_bloom.get(), byte_string)
         return self
 
 

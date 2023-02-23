@@ -1,10 +1,10 @@
 from libc.stdint cimport uint64_t, uint32_t
+from libcpp.memory cimport make_unique, unique_ptr
 from libcpp.vector cimport vector
-from cymem.cymem cimport Pool
 
 ctypedef uint64_t key_t
 
-cdef struct BloomStruct:
+cdef cppclass BloomStruct:
     vector[key_t] bitfield
     key_t hcount # hash count, number of hash functions
     key_t length
@@ -12,8 +12,7 @@ cdef struct BloomStruct:
 
 
 cdef class BloomFilter:
-    cdef Pool mem
-    cdef BloomStruct* c_bloom
+    cdef unique_ptr[BloomStruct] c_bloom
     cdef inline bint contains(self, key_t item) nogil
 
 
