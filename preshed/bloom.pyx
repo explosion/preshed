@@ -13,6 +13,13 @@ except ImportError:
     import copyreg as copy_reg
 
 
+cdef cppclass BloomStruct:
+    vector[key_t] bitfield
+    key_t hcount # hash count, number of hash functions
+    key_t length
+    uint32_t seed
+
+
 cdef str FORMAT = "<QQQQL"
 # this can't be in the enum because it depends on a string
 cdef uint32_t STRUCT_SIZE = struct.calcsize(FORMAT)
