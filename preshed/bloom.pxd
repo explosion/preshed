@@ -4,7 +4,7 @@ from libcpp.vector cimport vector
 
 ctypedef uint64_t key_t
 
-cdef cppclass BloomStruct
+cdef struct BloomStruct
 
 
 cdef class BloomFilter:

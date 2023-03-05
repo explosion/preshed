@@ -13,7 +13,7 @@ except ImportError:
     import copyreg as copy_reg
 
 
-cdef cppclass BloomStruct:
+cdef struct BloomStruct:
     vector[key_t] bitfield
     key_t hcount # hash count, number of hash functions
     key_t length
