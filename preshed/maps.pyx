@@ -2,10 +2,17 @@
 # cython: cdivision=True
 #
 cimport cython
+from cython.operator import dereference as deref
+from libcpp.memory cimport make_unique
 
 
 DEF EMPTY_KEY = 0
 DEF DELETED_KEY = 1
+
+
+# Note: will not be needed with Cython 3.
+cdef extern from "<utility>" namespace "std" nogil:
+    void swap[T](T& a, T& b)
 
 
 cdef class PreshMap:
@@ -29,19 +36,18 @@ cdef class PreshMap:
             while power < initial_size:
                 power *= 2
             initial_size = power
-        self.mem = Pool()
-        self.c_map = <MapStruct*>self.mem.alloc(1, sizeof(MapStruct))
-        map_init(self.mem, self.c_map, initial_size)
+        self.c_map = make_unique[MapStruct]()
+        map_init(self.c_map.get(), initial_size)
 
     property capacity:
         def __get__(self):
-            return self.c_map.length
+            return deref(self.c_map).cells.size()
 
     def items(self):
         cdef key_t key
         cdef void* value
         cdef int i = 0
-        while map_iter(self.c_map, &i, &key, &value):
+        while map_iter(self.c_map.get(), &i, &key, &value):
             yield key, <size_t>value
 
     def keys(self):
@@ -53,31 +59,31 @@ cdef class PreshMap:
             yield value
 
     def pop(self, key_t key, default=None):
-        cdef Result result = map_get_unless_missing(self.c_map, key)
-        map_clear(self.c_map, key)
+        cdef Result result = map_get_unless_missing(self.c_map.get(), key)
+        map_clear(self.c_map.get(), key)
         if result.found:
             return <size_t>result.value
         else:
             return default
 
     def __getitem__(self, key_t key):
-        cdef Result result = map_get_unless_missing(self.c_map, key)
+        cdef Result result = map_get_unless_missing(self.c_map.get(), key)
         if result.found:
             return <size_t>result.value
         else:
             return None
 
     def __setitem__(self, key_t key, size_t value):
-        map_set(self.mem, self.c_map, key, <void*>value)
+        map_set(self.c_map.get(), key, <void*>value)
 
     def __delitem__(self, key_t key):
-        map_clear(self.c_map, key)
+        map_clear(self.c_map.get(), key)
 
     def __len__(self):
-        return self.c_map.filled
+        return deref(self.c_map).filled
 
     def __contains__(self, key_t key):
-        cdef Result result = map_get_unless_missing(self.c_map, key)
+        cdef Result result = map_get_unless_missing(self.c_map.get(), key)
         return True if result.found else False
 
     def __iter__(self):
@@ -85,10 +91,10 @@ cdef class PreshMap:
             yield key
 
     cdef inline void* get(self, key_t key) nogil:
-        return map_get(self.c_map, key)
+        return map_get(self.c_map.get(), key)
 
     cdef void set(self, key_t key, void* value) except *:
-        map_set(self.mem, self.c_map, key, <void*>value)
+        map_set(self.c_map.get(), key, <void*>value)
 
 
 cdef class PreshMapArray:
@@ -100,23 +106,22 @@ cdef class PreshMapArray:
         self.length = length
         self.maps = <MapStruct*>self.mem.alloc(length, sizeof(MapStruct))
         for i in range(length):
-            map_init(self.mem, &self.maps[i], initial_size)
+            map_init(&self.maps[i], initial_size)
 
     cdef inline void* get(self, size_t i, key_t key) nogil:
         return map_get(&self.maps[i], key)
 
     cdef void set(self, size_t i, key_t key, void* value) except *:
-        map_set(self.mem, &self.maps[i], key, <void*>value)
+        map_set(&self.maps[i], key, <void*>value)
 
 
-cdef void map_init(Pool mem, MapStruct* map_, size_t length) except *:
-    map_.length = length
+cdef void map_init(MapStruct* map_, size_t length) except *:
     map_.filled = 0
-    map_.cells = <Cell*>mem.alloc(length, sizeof(Cell))
+    map_.cells.resize(length)
 
 
-cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *:
-    cdef Cell* cell
+cdef void map_set(MapStruct* map_, key_t key, void* value) except *:
+    cdef vector[Cell].iterator cell
     if key == EMPTY_KEY:
         map_.value_for_empty_key = value
         map_.is_empty_key_set = True
@@ -124,13 +129,13 @@ cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *:
         map_.value_for_del_key = value
         map_.is_del_key_set = True
     else:
-        cell = _find_cell_for_insertion(map_.cells, map_.length, key)
-        if cell.key == EMPTY_KEY:
+        cell = _find_cell_for_insertion(&map_.cells, key)
+        if deref(cell).key == EMPTY_KEY:
             map_.filled += 1
-        cell.key = key
-        cell.value = value
-        if (map_.filled + 1) * 5 >= (map_.length * 3):
-            _resize(mem, map_)
+        deref(cell).key = key
+        deref(cell).value = value
+        if (map_.filled + 1) * 5 >= (map_.cells.size() * 3):
+            _resize(map_)
 
 
 cdef void* map_get(const MapStruct* map_, const key_t key) nogil:
@@ -138,13 +143,13 @@ cdef void* map_get(const MapStruct* map_, const key_t key) nogil:
         return map_.value_for_empty_key
     elif key == DELETED_KEY:
         return map_.value_for_del_key
-    cdef Cell* cell = _find_cell(map_.cells, map_.length, key)
+    cdef Cell cell = _find_cell(map_.cells, key)
     return cell.value
 
 
 cdef Result map_get_unless_missing(const MapStruct* map_, const key_t key) nogil:
     cdef Result result
-    cdef Cell* cell
+    cdef Cell cell
     result.found = 0
     result.value = NULL
     if key == EMPTY_KEY:
@@ -156,7 +161,7 @@ cdef Result map_get_unless_missing(const MapStruct* map_, const key_t key) nogil
             result.found = 1
             result.value = map_.value_for_del_key
     else:
-        cell = _find_cell(map_.cells, map_.length, key)
+        cell = _find_cell(map_.cells, key)
         if cell.key == key:
             result.found = 1
             result.value = cell.value
@@ -173,7 +178,7 @@ cdef void* map_clear(MapStruct* map_, const key_t key) nogil:
         map_.is_del_key_set = False
         return value
     else:
-        cell = _find_cell(map_.cells, map_.length, key)
+        cell = _find_cell(map_.cells, key)
         cell.key = DELETED_KEY
         # We shouldn't decrement the "filled" value here, as we're not actually
         # making "empty" values -- deleted values aren't quite the same.
@@ -194,7 +199,7 @@ cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) nogi
     key and value.  Return False when iteration finishes.
     '''
     cdef const Cell* cell
-    while i[0] < map_.length:
+    while i[0] < map_.cells.size():
         cell = &map_.cells[i[0]]
         i[0] += 1
         if cell[0].key != EMPTY_KEY and cell[0].key != DELETED_KEY:
@@ -202,13 +207,13 @@ cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) nogi
             value[0] = cell[0].value
             return True
     # Remember to check for cells keyed by the special empty and deleted keys
-    if i[0] == map_.length:
+    if i[0] == map_.cells.size():
         i[0] += 1
         if map_.is_empty_key_set:
             key[0] = EMPTY_KEY
             value[0] = map_.value_for_empty_key
             return True
-    if i[0] == map_.length + 1:
+    if i[0] == map_.cells.size() + 1:
         i[0] += 1
         if map_.is_del_key_set:
             key[0] = DELETED_KEY
@@ -218,48 +223,44 @@ cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) nogi
 
 
 @cython.cdivision
-cdef inline Cell* _find_cell(Cell* cells, const key_t size, const key_t key) nogil:
+cdef inline Cell _find_cell(const vector[Cell]& cells, const key_t key) nogil:
     # Modulo for powers-of-two via bitwise &
-    cdef key_t i = (key & (size - 1))
+    cdef key_t i = (key & (cells.size() - 1))
     while cells[i].key != EMPTY_KEY and cells[i].key != key:
-        i = (i + 1) & (size - 1)
-    return &cells[i]
+        i = (i + 1) & (cells.size() - 1)
+    return cells[i]
 
 
 @cython.cdivision
-cdef inline Cell* _find_cell_for_insertion(Cell* cells, const key_t size, const key_t key) nogil:
+cdef inline vector[Cell].iterator _find_cell_for_insertion(vector[Cell]* cells, const key_t key) nogil:
     """Find the correct cell to insert a value, which could be a previously
     deleted cell. If we cross a deleted cell and the key is in the table, we
     mark the later cell as deleted, and return the earlier one."""
-    cdef Cell* deleted = NULL
+    cdef vector[Cell].iterator deleted = cells.end()
     # Modulo for powers-of-two via bitwise &
-    cdef key_t i = (key & (size - 1))
-    while cells[i].key != EMPTY_KEY and cells[i].key != key:
-        if cells[i].key == DELETED_KEY:
-            deleted = &cells[i]
-        i = (i + 1) & (size - 1)
-    if deleted is not NULL:
-        if cells[i].key == key:
+    cdef key_t i = (key & (cells.size() - 1))
+    while deref(cells)[i].key != EMPTY_KEY and deref(cells)[i].key != key:
+        if deref(cells)[i].key == DELETED_KEY:
+            deleted = cells.begin() + i
+        i = (i + 1) & (cells.size() - 1)
+    if deleted != cells.end():
+        if deref(deleted).key == key:
             # We need to ensure we don't end up with the key in the table twice.
             # If we're using a deleted cell and we also have the key, we mark
             # the later cell as deleted.
-            cells[i].key = DELETED_KEY
+            deref(cells)[i].key = DELETED_KEY
         return deleted
-    return &cells[i]
+    return cells.begin() + i
 
 
-cdef void _resize(Pool mem, MapStruct* map_) except *:
-    cdef size_t new_size = map_.length * 2
-    cdef Cell* old_cells = map_.cells
-    cdef size_t old_size = map_.length
+cdef void _resize(MapStruct* map_) except *:
+    # Allocate memory for new cells and swap out.
+    cdef vector[Cell] old_cells = vector[Cell](map_.cells.size() * 2)
+    swap(old_cells, map_.cells)
 
-    map_.length = new_size
     map_.filled = 0
-    map_.cells = <Cell*>mem.alloc(new_size, sizeof(Cell))
-    
+
     cdef size_t i
-    cdef size_t slot
-    for i in range(old_size):
+    for i in range(old_cells.size()):
         if old_cells[i].key != EMPTY_KEY and old_cells[i].key != DELETED_KEY:
-            map_set(mem, map_, old_cells[i].key, old_cells[i].value)
-    mem.free(old_cells)
+            map_set(map_, old_cells[i].key, old_cells[i].value)

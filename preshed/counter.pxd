@@ -1,4 +1,5 @@
 from libc.stdint cimport int64_t
+from libcpp.memory cimport unique_ptr
 
 from cymem.cymem cimport Pool
 
@@ -11,8 +12,7 @@ ctypedef int64_t count_t
 
 
 cdef class PreshCounter:
-    cdef Pool mem
-    cdef MapStruct* c_map
+    cdef unique_ptr[MapStruct] c_map
     cdef public object smoother
     cdef readonly count_t total
 
