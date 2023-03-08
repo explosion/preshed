@@ -1,7 +1,6 @@
 from libc.stdint cimport uint64_t
 from libcpp.memory cimport unique_ptr
 from libcpp.vector cimport vector
-from cymem.cymem cimport Pool
 
 
 ctypedef uint64_t key_t
@@ -48,12 +47,3 @@ cdef class PreshMap:
 
     cdef inline void* get(self, key_t key) nogil
     cdef void set(self, key_t key, void* value) except *
-
-
-cdef class PreshMapArray:
-    cdef Pool mem
-    cdef MapStruct* maps
-    cdef size_t length
-
-    cdef inline void* get(self, size_t i, key_t key) nogil
-    cdef void set(self, size_t i, key_t key, void* value) except *

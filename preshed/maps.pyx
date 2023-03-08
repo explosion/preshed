@@ -97,24 +97,6 @@ cdef class PreshMap:
         map_set(self.c_map.get(), key, <void*>value)
 
 
-cdef class PreshMapArray:
-    """An array of hash tables that assume keys come pre-hashed.  Each table
-    uses open addressing with linear probing.
-    """
-    def __init__(self, size_t length, size_t initial_size=8):
-        self.mem = Pool()
-        self.length = length
-        self.maps = <MapStruct*>self.mem.alloc(length, sizeof(MapStruct))
-        for i in range(length):
-            map_init(&self.maps[i], initial_size)
-
-    cdef inline void* get(self, size_t i, key_t key) nogil:
-        return map_get(&self.maps[i], key)
-
-    cdef void set(self, size_t i, key_t key, void* value) except *:
-        map_set(&self.maps[i], key, <void*>value)
-
-
 cdef void map_init(MapStruct* map_, size_t length) except *:
     map_.filled = 0
     map_.cells.resize(length)
