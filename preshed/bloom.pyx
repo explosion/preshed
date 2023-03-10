@@ -2,6 +2,7 @@
 # cython: cdivision=True
 #
 from libc.string cimport memcpy
+from libcpp.algorithm cimport copy as cpp_copy
 from murmurhash.mrmr cimport hash128_x86
 import math
 import struct
@@ -10,6 +11,13 @@ try:
     import copy_reg
 except ImportError:
     import copyreg as copy_reg
+
+
+cdef struct BloomStruct:
+    vector[key_t] bitfield
+    key_t hcount # hash count, number of hash functions
+    key_t length
+    uint32_t seed
 
 
 cdef str FORMAT = "<QQQQL"
@@ -43,9 +51,8 @@ cdef class BloomFilter:
     def __init__(self, key_t size=(2 ** 10), key_t hash_funcs=23, uint32_t seed=0):
         assert size > 0, "Size must be greater than zero"
         assert hash_funcs > 0, "Hash function count must be greater than zero"
-        self.mem = Pool()
-        self.c_bloom = <BloomStruct*>self.mem.alloc(1, sizeof(BloomStruct))
-        bloom_init(self.mem, self.c_bloom, hash_funcs, size, seed)
+        self.c_bloom = make_unique[BloomStruct]()
+        bloom_init(self.c_bloom.get(), hash_funcs, size, seed)
 
     @classmethod
     def from_error_rate(cls, members, error_rate=1E-4):
@@ -53,19 +60,19 @@ cdef class BloomFilter:
         return cls(*params)
 
     def add(self, key_t item):
-        bloom_add(self.c_bloom, item)
+        bloom_add(self.c_bloom.get(), item)
 
     def __contains__(self, item):
-        return bloom_contains(self.c_bloom, item)
+        return bloom_contains(self.c_bloom.get(), item)
 
     cdef inline bint contains(self, key_t item) nogil:
-        return bloom_contains(self.c_bloom, item)
+        return bloom_contains(self.c_bloom.get(), item)
 
     def to_bytes(self):
-        return bloom_to_bytes(self.c_bloom)
+        return bloom_to_bytes(self.c_bloom.get())
 
     def from_bytes(self, bytes byte_string):
-        bloom_from_bytes(self.mem, self.c_bloom, byte_string)
+        bloom_from_bytes(self.c_bloom.get(), byte_string)
         return self
 
 
@@ -79,11 +86,11 @@ cdef bytes bloom_to_bytes(const BloomStruct* bloom):
     buflen = bloom.length // KEY_BITS
     if bloom.length % KEY_BITS > 0:
         buflen += 1
-    buffer = (<char*>bloom.bitfield)[0:buflen * sizeof(key_t)]
+    buffer = (<const char*>bloom.bitfield.data())[0:buflen * sizeof(key_t)]
     return prefix + buffer
 
 
-cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
+cdef void bloom_from_bytes(BloomStruct* bloom, bytes data):
     # new-style memory structure (each unit is a key_t/64 bits):
     # - pad1: 0 (not valid in old data)
     # - VERSION: 1 (can be raised later if necessary
@@ -94,11 +101,11 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
 
     if len(data) < STRUCT_SIZE:
         # unlikely but possible with old data
-        bloom_from_bytes_legacy(mem, bloom, data)
+        bloom_from_bytes_legacy(bloom, data)
         return
     pad, ver, hcount, length, seed = struct.unpack(FORMAT, data[0:STRUCT_SIZE])
     if pad != 0:
-        bloom_from_bytes_legacy(mem, bloom, data)
+        bloom_from_bytes_legacy(bloom, data)
         return
     if ver != VERSION:
         raise ValueError("Unknown serialization version")
@@ -115,11 +122,12 @@ cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
     assert buflen > 0, "Tried to allocate an empty buffer"
 
     contents = data[STRUCT_SIZE:]
-    bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
-    memcpy(bloom.bitfield, <char*>contents, sizeof(key_t) * buflen)
+    cdef key_t* contents_c = <key_t*><char*>contents
+    bloom.bitfield = vector[key_t](buflen)
+    bloom.bitfield.assign(contents_c, contents_c + buflen)
 
 
-cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
+cdef void bloom_from_bytes_legacy(BloomStruct* bloom, bytes data):
     # Older versions of this library used the array module with type L for
     # serialization. Types in array guarantee a minimum size, not an actual
     # size, and it turns out L is 8 bytes on Linux and most platforms, but 4 on
@@ -171,7 +179,7 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
         buflen += 1
     contents = struct.unpack(f"<{decode_len}{unit}", data[offset:])
     assert buflen > 0, "Tried to allocate an empty buffer"
-    bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
+    bloom.bitfield = vector[key_t](buflen, 0)
 
     # Each item in contents provides one actually used byte, so we'll copy it
     # into the containers.
@@ -181,7 +189,7 @@ cdef void bloom_from_bytes_legacy(Pool mem, BloomStruct* bloom, bytes data):
         bloom.bitfield[block] |= contents[i] << (8 * idx)
 
 
-cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
+cdef void bloom_init(BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
     # size should be a multiple of the container size - round up
     if length % KEY_BITS:
         length = ((length // KEY_BITS) + 1) * KEY_BITS
@@ -189,7 +197,7 @@ cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, u
     bloom.hcount = hcount
     buflen = length // KEY_BITS
     assert buflen > 0, "Tried to allocate an empty buffer"
-    bloom.bitfield = <key_t*>mem.alloc(buflen, sizeof(key_t))
+    bloom.bitfield = vector[key_t](buflen, 0)
     bloom.seed = seed
 
 
