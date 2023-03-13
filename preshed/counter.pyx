@@ -1,46 +1,47 @@
 """Count occurrences of uint64-valued keys."""
 from __future__ import division
 cimport cython
+from cython.operator cimport dereference as deref
 from libc.math cimport log, exp, sqrt
+from libcpp.memory cimport make_unique
 
 
 cdef class PreshCounter:
     def __init__(self, initial_size=8):
         assert initial_size != 0
         assert initial_size & (initial_size - 1) == 0
-        self.mem = Pool()
-        self.c_map = <MapStruct*>self.mem.alloc(1, sizeof(MapStruct))
-        map_init(self.mem, self.c_map, initial_size)
+        self.c_map = make_unique[MapStruct]()
+        map_init(self.c_map.get(), initial_size)
         self.smoother = None
         self.total = 0
 
     property length:
         def __get__(self):
-            return self.c_map.length
+            return deref(self.c_map).cells.size()
 
     def __len__(self):
-        return self.c_map.length
+        return deref(self.c_map).cells.size()
 
     def __iter__(self):
         cdef int i = 0
         cdef key_t key
         cdef void* value
-        while map_iter(self.c_map, &i, &key, &value):
+        while map_iter(self.c_map.get(), &i, &key, &value):
             yield key, <size_t>value
 
     def __getitem__(self, key_t key):
-        return <count_t>map_get(self.c_map, key)
+        return <count_t>map_get(self.c_map.get(), key)
 
     cpdef int inc(self, key_t key, count_t inc) except -1:
-        cdef count_t c = <count_t>map_get(self.c_map, key)
+        cdef count_t c = <count_t>map_get(self.c_map.get(), key)
         c += inc
-        map_set(self.mem, self.c_map, key, <void*>c)
+        map_set(self.c_map.get(), key, <void*>c)
         self.total += inc
         return c
 
     def prob(self, key_t key):
         cdef GaleSmoother smoother
-        cdef void* value = map_get(self.c_map, key)
+        cdef void* value = map_get(self.c_map.get(), key)
         if self.smoother is not None:
             smoother = self.smoother
             r_star = self.smoother(<count_t>value)
@@ -81,7 +82,7 @@ cdef class GaleSmoother:
         cdef int n_counts = 0
         for _ in count_counts:
             n_counts += 1
-        sorted_r = <count_t*>count_counts.mem.alloc(n_counts, sizeof(count_t))
+        sorted_r = <count_t*>self.mem.alloc(n_counts, sizeof(count_t))
         self.Nr = <count_t*>self.mem.alloc(n_counts, sizeof(count_t))
         for i, (count, count_count) in enumerate(sorted(count_counts)):
             sorted_r[i] = count
