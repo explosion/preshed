@@ -100,7 +100,7 @@ def setup_package():
             url=about["__uri__"],
             license=about["__license__"],
             ext_modules=cythonize(ext_modules, language_level=2),
-            python_requires=">=3.6",
+            python_requires=">=3.6,<3.14",
             install_requires=["cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             classifiers=[
                 "Environment :: Console",
