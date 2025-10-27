@@ -72,6 +72,12 @@ jobs:
         run: |
           python -m pip install -U -r requirements.txt
 
+      - name: Force-disable GIL on free-threaded builds
+        if: endsWith(matrix.python_version, 't')
+        shell: bash
+        run: |
+          echo "PYTHON_GIL=0" >> $GITHUB_ENV
+
       - name: Run tests
         shell: bash
         run: |
