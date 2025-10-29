@@ -2,8 +2,9 @@
 requires = [
     "setuptools",
     "cython>=0.28",
-    "cymem>=2.0.2,<2.1.0",
-    "murmurhash>=0.28.0,<1.1.0",
+    # TODO: update for cymem free-thraded support release before making upstream PR
+    "cymem @ git+https://github.com/lysnikolaou/cymem.git@free-threading",
+    "murmurhash @ git+https://github.com/explosion/murmurhash.git@master",
 ]
 build-backend = "setuptools.build_meta"
 
