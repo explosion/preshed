@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "setuptools",
-    "cython>=0.28",
+    "cython>=3.1",
     # TODO: update for cymem free-thraded support release before making upstream PR
     "cymem @ git+https://github.com/lysnikolaou/cymem.git@free-threading",
     "murmurhash @ git+https://github.com/explosion/murmurhash.git@master",

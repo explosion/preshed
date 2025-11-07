@@ -18,8 +18,6 @@ cdef class BloomFilter:
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *
 
-cdef void bloom_add(BloomStruct* bloom, key_t item) nogil
-
 cdef bint bloom_contains(const BloomStruct* bloom, key_t item) nogil
 
 cdef void bloom_add(BloomStruct* bloom, key_t item) nogil

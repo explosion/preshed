@@ -41,10 +41,12 @@ cdef class BloomFilter:
         return cls(*params)
 
     def add(self, key_t item):
-        bloom_add(self.c_bloom, item)
+        with cython.critical_section(self):
+            bloom_add(self.c_bloom, item)
 
     def __contains__(self, key_t item):
-        return bloom_contains(self.c_bloom, item)
+        with cython.critical_section(self):
+            return bloom_contains(self.c_bloom, item)
 
     cdef inline bint contains(self, key_t item) nogil:
         return bloom_contains(self.c_bloom, item)
@@ -54,8 +56,9 @@ cdef class BloomFilter:
         cdef key_t bloom_length
         # lives until the data are copied to the Python bytes object
         cdef vector[key_t] ret = vector[key_t]()
-        c_data = bloom_to_bytes(self.c_bloom, ret)
-        bloom_length = self.c_bloom.length
+        with cython.critical_section(self):
+            c_data = bloom_to_bytes(self.c_bloom, ret)
+            bloom_length = self.c_bloom.length
         return <bytes>c_data[:3*sizeof(key_t) + bloom_length]
 
     def from_bytes(self, bytes byte_string):
