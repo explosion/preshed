@@ -12,6 +12,7 @@ jobs:
     uses: explosion/gha-cibuildwheel/.github/workflows/cibuildwheel.yml@main
     with:
       pure-python: false
+      wheel-name-pattern: "preshed-*.whl"
     secrets:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
