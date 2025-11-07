@@ -100,7 +100,7 @@ def setup_package():
             url=about["__uri__"],
             license=about["__license__"],
             ext_modules=cythonize(ext_modules, language_level=2),
-            python_requires=">=3.6,<3.14",
+            python_requires=">=3.6,<3.15",
             install_requires=["cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             classifiers=[
                 "Environment :: Console",
@@ -118,6 +118,8 @@ def setup_package():
                 "Programming Language :: Python :: 3.10",
                 "Programming Language :: Python :: 3.11",
                 "Programming Language :: Python :: 3.12",
+                "Programming Language :: Python :: 3.13",
+                "Programming Language :: Python :: 3.14",
                 "Topic :: Scientific/Engineering",
             ],
             cmdclass={"build_ext": build_ext_subclass},
