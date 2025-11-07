@@ -5,6 +5,10 @@ from murmurhash.mrmr cimport hash128_x86
 import math
 from array import array
 
+cimport cython
+
+from libcpp.vector cimport vector
+
 try:
     import copy_reg
 except ImportError:
@@ -39,46 +43,46 @@ cdef class BloomFilter:
     def add(self, key_t item):
         bloom_add(self.c_bloom, item)
 
-    def __contains__(self, item):
+    def __contains__(self, key_t item):
         return bloom_contains(self.c_bloom, item)
 
     cdef inline bint contains(self, key_t item) nogil:
         return bloom_contains(self.c_bloom, item)
 
     def to_bytes(self):
-        return bloom_to_bytes(self.c_bloom)
+        cdef char* c_data
+        cdef key_t bloom_length
+        # lives until the data are copied to the Python bytes object
+        cdef vector[key_t] ret = vector[key_t]()
+        c_data = bloom_to_bytes(self.c_bloom, ret)
+        bloom_length = self.c_bloom.length
+        return <bytes>c_data[:3*sizeof(key_t) + bloom_length]
 
     def from_bytes(self, bytes byte_string):
+        # I don't think it's possible to make this thread-safe?
+        # mem.alloc acquires a critical section on mem.addresses
         bloom_from_bytes(self.mem, self.c_bloom, byte_string)
         return self
 
 
-cdef bytes bloom_to_bytes(const BloomStruct* bloom):
-    py = array("L")
-    py.append(bloom.hcount)
-    py.append(bloom.length)
-    py.append(bloom.seed)
+cdef char* bloom_to_bytes(const BloomStruct* bloom, vector[key_t]& ret):
+    ret.push_back(bloom.hcount)
+    ret.push_back(bloom.length)
+    ret.push_back(<key_t>bloom.seed)
     for i in range(bloom.length // sizeof(key_t)):
-        py.append(bloom.bitfield[i])
-    if hasattr(py, "tobytes"):
-        return py.tobytes()
-    else:
-        # Python 2 :(
-        return py.tostring()
+        ret.push_back(bloom.bitfield[i])
+    return <char *>ret.data()
 
 
 cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
-    py = array("L")
-    if hasattr(py, "frombytes"):
-        py.frombytes(data)
-    else:
-        py.fromstring(data)
-    bloom.hcount = py[0]
-    bloom.length = py[1]
-    bloom.seed = py[2]
+    cdef char* c_data = data;
+    cdef key_t* i_data = <key_t*>c_data;
+    bloom.hcount = i_data[0]
+    bloom.length = i_data[1]
+    bloom.seed = <uint32_t>i_data[2]
     bloom.bitfield = <key_t*>mem.alloc(bloom.length // sizeof(key_t), sizeof(key_t))
     for i in range(bloom.length // sizeof(key_t)):
-        bloom.bitfield[i] = py[3+i]
+        bloom.bitfield[i] = i_data[3+i]
 
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
