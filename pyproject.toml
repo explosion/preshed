@@ -2,8 +2,11 @@
 requires = [
     "setuptools",
     "cython>=3.1",
-    # TODO: update for cymem free-thraded support release before making upstream PR
+    # needed to get a thread-safe version of cymem
+    # TODO: move to explosion/cymem when the PR is merged
     "cymem @ git+https://github.com/lysnikolaou/cymem.git@free-threading",
+    # needed because murmurhash free-threaded support hasn't been released
+    # TODO: delete when murmurhash does a release
     "murmurhash @ git+https://github.com/explosion/murmurhash.git@master",
 ]
 build-backend = "setuptools.build_meta"

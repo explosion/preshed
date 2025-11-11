@@ -52,29 +52,31 @@ cdef class BloomFilter:
         return bloom_contains(self.c_bloom, item)
 
     def to_bytes(self):
-        cdef char* c_data
-        cdef key_t bloom_length
-        # lives until the data are copied to the Python bytes object
-        cdef vector[key_t] ret = vector[key_t]()
         with cython.critical_section(self):
-            c_data = bloom_to_bytes(self.c_bloom, ret)
-            bloom_length = self.c_bloom.length
-        return <bytes>c_data[:3*sizeof(key_t) + bloom_length]
+            return bloom_to_bytes(self.c_bloom)
 
     def from_bytes(self, bytes byte_string):
-        # I don't think it's possible to make this thread-safe?
-        # mem.alloc acquires a critical section on mem.addresses
-        bloom_from_bytes(self.mem, self.c_bloom, byte_string)
-        return self
+        with cython.critical_section(self):
+            bloom_from_bytes(self.mem, self.c_bloom, byte_string)
+            return self
+
+    def _roundtrip(self):
+        # Purely for testing, since this operation can't be done atomically
+        # without holding a critical section the entire time.
+        # Entering the same critical section recursively doesn't release it.
+        # (see cpython commit 180d417)
+        with cython.critical_section(self):
+            self.from_bytes(self.to_bytes())
 
 
-cdef char* bloom_to_bytes(const BloomStruct* bloom, vector[key_t]& ret):
+cdef bytes bloom_to_bytes(const BloomStruct* bloom):
+    cdef vector[key_t] ret = vector[key_t]()
     ret.push_back(bloom.hcount)
     ret.push_back(bloom.length)
     ret.push_back(<key_t>bloom.seed)
     for i in range(bloom.length // sizeof(key_t)):
         ret.push_back(bloom.bitfield[i])
-    return <char *>ret.data()
+    return (<char *>ret.data())[:3*sizeof(key_t) + bloom.length]
 
 
 cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
