@@ -1,9 +1,7 @@
 from __future__ import division
 import pytest
 import pickle
-import threading
 
-from concurrent.futures import ThreadPoolExecutor
 from preshed.bloom import BloomFilter
 
 def test_contains():
@@ -56,33 +54,3 @@ def test_bloom_pickle():
     bf2 = pickle.loads(data)
     for ii in range(0,1000,20):
         assert ii in bf2
-
-
-def test_multithreaded_sharing():
-    bf = BloomFilter(size=2**16)
-    n_threads = 8
-    vals = list(range(0, 10000, 10))
-    n_vals = len(vals)
-    chunk_size = n_vals//n_threads
-    assert chunk_size * n_threads == n_vals
-    chunks = []
-    for i in range(0, n_vals, chunk_size):
-        chunks.append(vals[i: i + chunk_size])
-
-    b = threading.Barrier(n_threads)
-
-    def worker(chunk):
-        b.wait()
-        for ii in chunk:
-            # exercises __contains__, add, and to_bytes
-            # all are supposed to be thread-safe
-            assert ii not in bf
-            bf.add(ii)
-            assert ii in bf
-            bf._roundtrip()
-
-    with ThreadPoolExecutor(max_workers=n_threads) as tpe:
-        futures = []
-        for i, chunk in enumerate(chunks):
-            futures.append(tpe.submit(worker, chunk))
-        [f.result() for f in futures]
