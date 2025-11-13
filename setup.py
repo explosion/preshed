@@ -99,7 +99,11 @@ def setup_package():
             version=about["__version__"],
             url=about["__uri__"],
             license=about["__license__"],
-            ext_modules=cythonize(ext_modules, language_level=2),
+            ext_modules=cythonize(
+                ext_modules,
+                language_level=2,
+                compiler_directives={"freethreading_compatible": True},
+            ),
             python_requires=">=3.6,<3.15",
             install_requires=["cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             classifiers=[

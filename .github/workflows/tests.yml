@@ -16,8 +16,7 @@ env:
 jobs:
   tests:
     name: Test
-    # TODO: uncomment before upstream PR
-    # if: github.repository_owner == 'explosion'
+    if: github.repository_owner == 'explosion'
     strategy:
       fail-fast: false
       matrix:
@@ -71,13 +70,6 @@ jobs:
       - name: Install test requirements
         run: |
           python -m pip install -U -r requirements.txt
-
-      # TODO: delete when Cython extensions declare themselves compatible
-      - name: Force-disable GIL on free-threaded builds
-        if: endsWith(matrix.python_version, 't')
-        shell: bash
-        run: |
-          echo "PYTHON_GIL=0" >> $GITHUB_ENV
 
       - name: Run tests
         shell: bash
