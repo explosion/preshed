@@ -70,12 +70,14 @@ cdef class BloomFilter:
 
 
 cdef bytes bloom_to_bytes(const BloomStruct* bloom):
+    # local scratch buffer
     cdef vector[key_t] ret = vector[key_t]()
     ret.push_back(bloom.hcount)
     ret.push_back(bloom.length)
     ret.push_back(<key_t>bloom.seed)
     for i in range(bloom.length // sizeof(key_t)):
         ret.push_back(bloom.bitfield[i])
+    # copy data in the scratch buffer into a new bytes object
     return (<char *>ret.data())[:3*sizeof(key_t) + bloom.length]
 
 
