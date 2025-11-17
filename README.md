@@ -6,10 +6,11 @@ Simple but high performance Cython hash table mapping pre-randomized keys to
 `void*` values. Inspired by
 [Jeff Preshing](http://preshing.com/20130107/this-hash-table-is-faster-than-a-judy-array/).
 
-All Python APIs provded by the `BloomFilter` and `PreshedMap` classes are
+All Python APIs provded by the `BloomFilter` and `PreshMap` classes are
 thread-safe on both the GIL-enabled build and the free-threaded build of Python
-3.14 and newer. If you use the C API, you must provide external syncrhonization
-if you use the data structures by this library in a multithreaded environment.
+3.14 and newer. If you use the C API or the `PreshCounter` class, you must
+provide external synchronization if you use the data structures by this library
+in a multithreaded environment.
 
 [![tests](https://github.com/explosion/preshed/actions/workflows/tests.yml/badge.svg)](https://github.com/explosion/preshed/actions/workflows/tests.yml)
 [![pypi Version](https://img.shields.io/pypi/v/preshed.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.python.org/pypi/preshed)
