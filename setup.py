@@ -104,7 +104,7 @@ def setup_package():
                 language_level=2,
                 compiler_directives={"freethreading_compatible": True},
             ),
-            python_requires=">=3.6,<3.15",
+            python_requires=">=3.9,<3.15",
             install_requires=["cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             classifiers=[
                 "Environment :: Console",

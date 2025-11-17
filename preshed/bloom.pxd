@@ -13,6 +13,7 @@ cdef struct BloomStruct:
 cdef class BloomFilter:
     cdef Pool mem
     cdef BloomStruct* c_bloom
+    # Thread-unsafe variant of __contains__
     cdef inline bint contains(self, key_t item) nogil
 
 
