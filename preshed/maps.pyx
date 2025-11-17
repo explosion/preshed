@@ -37,6 +37,8 @@ cdef class PreshMap:
         def __get__(self):
             cdef key_t length
             with cython.critical_section(self):
+                # This might be atomic on some architectures
+                # but not everywhere, so needs a lock
                 length = self.c_map.length
             return length
 
@@ -90,6 +92,8 @@ cdef class PreshMap:
     def __len__(self):
         cdef key_t filled
         with cython.critical_section(self):
+            # This might be atomic on some architectures
+            # but not everywhere, so needs a lock
             filled = self.c_map.filled
         return filled
 
@@ -103,6 +107,7 @@ cdef class PreshMap:
         for key in self.keys():
             yield key
 
+    # thread-unsafe low-level API
     cdef inline void* get(self, key_t key) nogil:
         return map_get(self.c_map, key)
 

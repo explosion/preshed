@@ -48,6 +48,7 @@ cdef class BloomFilter:
         with cython.critical_section(self):
             return bloom_contains(self.c_bloom, item)
 
+    # Requires external synchronization (e.g. a critical section)
     cdef inline bint contains(self, key_t item) nogil:
         return bloom_contains(self.c_bloom, item)
 
