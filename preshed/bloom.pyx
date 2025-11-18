@@ -5,6 +5,10 @@ from murmurhash.mrmr cimport hash128_x86
 import math
 from array import array
 
+cimport cython
+
+from libcpp.vector cimport vector
+
 try:
     import copy_reg
 except ImportError:
@@ -37,48 +41,56 @@ cdef class BloomFilter:
         return cls(*params)
 
     def add(self, key_t item):
-        bloom_add(self.c_bloom, item)
+        with cython.critical_section(self):
+            bloom_add(self.c_bloom, item)
 
-    def __contains__(self, item):
-        return bloom_contains(self.c_bloom, item)
+    def __contains__(self, key_t item):
+        with cython.critical_section(self):
+            return bloom_contains(self.c_bloom, item)
 
+    # Requires external synchronization (e.g. a critical section)
     cdef inline bint contains(self, key_t item) nogil:
         return bloom_contains(self.c_bloom, item)
 
     def to_bytes(self):
-        return bloom_to_bytes(self.c_bloom)
+        with cython.critical_section(self):
+            return bloom_to_bytes(self.c_bloom)
 
     def from_bytes(self, bytes byte_string):
-        bloom_from_bytes(self.mem, self.c_bloom, byte_string)
-        return self
+        with cython.critical_section(self):
+            bloom_from_bytes(self.mem, self.c_bloom, byte_string)
+            return self
+
+    def _roundtrip(self):
+        # Purely for testing, since this operation can't be done atomically
+        # without holding a critical section the entire time.
+        # Entering the same critical section recursively doesn't release it.
+        # (see cpython commit 180d417)
+        with cython.critical_section(self):
+            self.from_bytes(self.to_bytes())
 
 
 cdef bytes bloom_to_bytes(const BloomStruct* bloom):
-    py = array("L")
-    py.append(bloom.hcount)
-    py.append(bloom.length)
-    py.append(bloom.seed)
+    # local scratch buffer
+    cdef vector[key_t] ret = vector[key_t]()
+    ret.push_back(bloom.hcount)
+    ret.push_back(bloom.length)
+    ret.push_back(<key_t>bloom.seed)
     for i in range(bloom.length // sizeof(key_t)):
-        py.append(bloom.bitfield[i])
-    if hasattr(py, "tobytes"):
-        return py.tobytes()
-    else:
-        # Python 2 :(
-        return py.tostring()
+        ret.push_back(bloom.bitfield[i])
+    # copy data in the scratch buffer into a new bytes object
+    return (<char *>ret.data())[:3*sizeof(key_t) + bloom.length]
 
 
 cdef void bloom_from_bytes(Pool mem, BloomStruct* bloom, bytes data):
-    py = array("L")
-    if hasattr(py, "frombytes"):
-        py.frombytes(data)
-    else:
-        py.fromstring(data)
-    bloom.hcount = py[0]
-    bloom.length = py[1]
-    bloom.seed = py[2]
+    cdef char* c_data = data;
+    cdef key_t* i_data = <key_t*>c_data;
+    bloom.hcount = i_data[0]
+    bloom.length = i_data[1]
+    bloom.seed = <uint32_t>i_data[2]
     bloom.bitfield = <key_t*>mem.alloc(bloom.length // sizeof(key_t), sizeof(key_t))
     for i in range(bloom.length // sizeof(key_t)):
-        bloom.bitfield[i] = py[3+i]
+        bloom.bitfield[i] = i_data[3+i]
 
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *:
