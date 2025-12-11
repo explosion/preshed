@@ -17,5 +17,5 @@ jobs:
       pure-python: false
       wheel-name-pattern: "preshed-*.whl"
     secrets:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
+      gh-token: ${{ secrets.GITHUB_TOKEN }}
 
