@@ -170,7 +170,7 @@ cdef double _get_zr(int j, count_t* sorted_r, count_t Nr_j, int n_counts) except
 
 
 @cython.cdivision(True)
-cdef double _variance(double r, double Nr, double Nr1) nogil:
+cdef double _variance(double r, double Nr, double Nr1) noexcept nogil:
     return 1.96 * sqrt((r+1)**2 * (Nr1 / Nr**2) * (1.0 + (Nr1 / Nr)))
 
 

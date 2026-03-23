@@ -49,7 +49,7 @@ cdef class BloomFilter:
             return bloom_contains(self.c_bloom, item)
 
     # Requires external synchronization (e.g. a critical section)
-    cdef inline bint contains(self, key_t item) nogil:
+    cdef inline bint contains(self, key_t item) noexcept nogil:
         return bloom_contains(self.c_bloom, item)
 
     def to_bytes(self):
@@ -115,7 +115,7 @@ cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, u
 # The choice of seeds is arbitrary.
 
 
-cdef void bloom_add(BloomStruct* bloom, key_t item) nogil:
+cdef void bloom_add(BloomStruct* bloom, key_t item) noexcept nogil:
     cdef key_t hv
     cdef key_t[2] keys
     cdef key_t one = 1 # We want this explicitly typed, because bits
@@ -125,7 +125,7 @@ cdef void bloom_add(BloomStruct* bloom, key_t item) nogil:
         bloom.bitfield[hv // sizeof(key_t)] |= one << (hv % sizeof(key_t))
 
 
-cdef bint bloom_contains(const BloomStruct* bloom, key_t item) nogil:
+cdef bint bloom_contains(const BloomStruct* bloom, key_t item) noexcept nogil:
     cdef key_t hv
     cdef key_t[2] keys
     cdef key_t one = 1 # We want this explicitly typed, because bits

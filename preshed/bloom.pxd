@@ -14,7 +14,7 @@ cdef class BloomFilter:
     cdef Pool mem
     cdef BloomStruct* c_bloom
     # Thread-unsafe variant of __contains__
-    cdef inline bint contains(self, key_t item) nogil
+    cdef inline bint contains(self, key_t item) noexcept nogil
 
 # Low-level thread-unsafe C API.
 # If you use this API and expose it to Python, you must provide external
@@ -22,6 +22,6 @@ cdef class BloomFilter:
 
 cdef void bloom_init(Pool mem, BloomStruct* bloom, key_t hcount, key_t length, uint32_t seed) except *
 
-cdef bint bloom_contains(const BloomStruct* bloom, key_t item) nogil
+cdef bint bloom_contains(const BloomStruct* bloom, key_t item) noexcept nogil
 
-cdef void bloom_add(BloomStruct* bloom, key_t item) nogil
+cdef void bloom_add(BloomStruct* bloom, key_t item) noexcept nogil

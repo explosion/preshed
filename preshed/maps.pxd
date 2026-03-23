@@ -29,20 +29,20 @@ cdef struct MapStruct:
     bint is_del_key_set
 
 cdef void* map_bulk_get(const MapStruct* map_, const key_t* keys, void** values,
-                        int n) nogil
+                        int n) noexcept nogil
 
 
-cdef Result map_get_unless_missing(const MapStruct* map_, const key_t key) nogil
+cdef Result map_get_unless_missing(const MapStruct* map_, const key_t key) noexcept nogil
 
-cdef void* map_get(const MapStruct* map_, const key_t key) nogil
+cdef void* map_get(const MapStruct* map_, const key_t key) noexcept nogil
 
 cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *
 
 cdef void map_init(Pool mem, MapStruct* pmap, size_t length) except *
 
-cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) nogil
+cdef bint map_iter(const MapStruct* map_, int* i, key_t* key, void** value) noexcept nogil
 
-cdef void* map_clear(MapStruct* map_, const key_t key) nogil
+cdef void* map_clear(MapStruct* map_, const key_t key) noexcept nogil
 
 
 cdef class PreshMap:
@@ -50,7 +50,7 @@ cdef class PreshMap:
     cdef Pool mem
 
     # these methods are thread-unsafe and require external synchronization
-    cdef inline void* get(self, key_t key) nogil
+    cdef inline void* get(self, key_t key) noexcept nogil
     cdef void set(self, key_t key, void* value) except *
 
 # note: this class is thread-unsafe without external synchronization
@@ -59,5 +59,5 @@ cdef class PreshMapArray:
     cdef MapStruct* maps
     cdef size_t length
 
-    cdef inline void* get(self, size_t i, key_t key) nogil
+    cdef inline void* get(self, size_t i, key_t key) noexcept nogil
     cdef void set(self, size_t i, key_t key, void* value) except *
