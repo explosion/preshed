@@ -104,7 +104,7 @@ def setup_package():
                 language_level=2,
                 compiler_directives={"freethreading_compatible": True},
             ),
-            python_requires=">=3.9,<3.15",
+            python_requires=">=3.9,<3.16",
             install_requires=["cymem>=2.0.2,<2.1.0", "murmurhash>=0.28.0,<1.1.0"],
             classifiers=[
                 "Environment :: Console",
@@ -121,6 +121,7 @@ def setup_package():
                 "Programming Language :: Python :: 3.12",
                 "Programming Language :: Python :: 3.13",
                 "Programming Language :: Python :: 3.14",
+                "Programming Language :: Python :: 3.15",
                 "Programming Language :: Python :: Free Threading :: 2 - Beta",
                 "Topic :: Scientific/Engineering",
             ],
