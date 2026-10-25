@@ -4,6 +4,7 @@
 cimport cython
 from cython.operator import dereference as deref
 from libcpp.memory cimport make_unique
+from cpython.long cimport PyLong_AsUnsignedLongLongMask
 
 
 DEF EMPTY_KEY = 0
@@ -13,6 +14,13 @@ DEF DELETED_KEY = 1
 # Note: will not be needed with Cython 3.
 cdef extern from "<utility>" namespace "std" nogil:
     void swap[T](T& a, T& b)
+cdef inline key_t _as_key_t(object key) except *:
+    # Accept the full uint64 key range. Cython 3 converts a Python int to an
+    # unsigned C integer through ssize_t and raises OverflowError for values
+    # >= 2**63, which locked away the upper half of the key space (and the
+    # keys() round-trip: keys() yields those values back as Python ints).
+    # The mask conversion restores the wrapping semantics of Cython 0.28.
+    return <key_t>PyLong_AsUnsignedLongLongMask(key)
 
 
 cdef class PreshMap:
@@ -58,32 +66,37 @@ cdef class PreshMap:
         for _, value in self.items():
             yield value
 
-    def pop(self, key_t key, default=None):
-        cdef Result result = map_get_unless_missing(self.c_map.get(), key)
-        map_clear(self.c_map.get(), key)
+    def pop(self, key, default=None):
+        cdef key_t key_t_key = _as_key_t(key)
+        cdef Result result = map_get_unless_missing(self.c_map.get(), key_t_key)
+        map_clear(self.c_map.get(), key_t_key)
         if result.found:
             return <size_t>result.value
         else:
             return default
 
-    def __getitem__(self, key_t key):
-        cdef Result result = map_get_unless_missing(self.c_map.get(), key)
+    def __getitem__(self, key):
+        cdef key_t key_t_key = _as_key_t(key)
+        cdef Result result = map_get_unless_missing(self.c_map.get(), key_t_key)
         if result.found:
             return <size_t>result.value
         else:
             return None
 
-    def __setitem__(self, key_t key, size_t value):
-        map_set(self.c_map.get(), key, <void*>value)
+    def __setitem__(self, key, size_t value):
+        cdef key_t key_t_key = _as_key_t(key)
+        map_set(self.c_map.get(), key_t_key, <void*>value)
 
-    def __delitem__(self, key_t key):
-        map_clear(self.c_map.get(), key)
+    def __delitem__(self, key):
+        cdef key_t key_t_key = _as_key_t(key)
+        map_clear(self.c_map.get(), key_t_key)
 
     def __len__(self):
         return deref(self.c_map).filled
 
-    def __contains__(self, key_t key):
-        cdef Result result = map_get_unless_missing(self.c_map.get(), key)
+    def __contains__(self, key):
+        cdef key_t key_t_key = _as_key_t(key)
+        cdef Result result = map_get_unless_missing(self.c_map.get(), key_t_key)
         return True if result.found else False
 
     def __iter__(self):
