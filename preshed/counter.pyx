@@ -28,7 +28,9 @@ cdef class PreshCounter:
         while map_iter(self.c_map, &i, &key, &value):
             yield key, <size_t>value
 
-    def __getitem__(self, key_t key):
+    def __getitem__(self, object key_obj):
+        # See PreshMap.__getitem__: typed keys would go through Py_ssize_t
+        cdef key_t key = key_obj
         return <count_t>map_get(self.c_map, key)
 
     cpdef int inc(self, key_t key, count_t inc) except -1:

@@ -44,7 +44,8 @@ cdef class BloomFilter:
         with cython.critical_section(self):
             bloom_add(self.c_bloom, item)
 
-    def __contains__(self, key_t item):
+    def __contains__(self, object item_obj):
+        cdef key_t item = item_obj
         with cython.critical_section(self):
             return bloom_contains(self.c_bloom, item)
 

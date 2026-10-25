@@ -72,7 +72,11 @@ cdef class PreshMap:
         else:
             return default
 
-    def __getitem__(self, key_t key):
+    # Mapping-protocol methods take `object` and convert explicitly: Cython 3.3
+    # turns a C-integer-typed __getitem__/__setitem__/__delitem__ into the
+    # sequence slots, which go through Py_ssize_t and reject keys >= 2**63.
+    def __getitem__(self, object key_obj):
+        cdef key_t key = key_obj
         cdef Result result
         with cython.critical_section(self):
             result = map_get_unless_missing(self.c_map, key)
@@ -81,11 +85,13 @@ cdef class PreshMap:
         else:
             return None
 
-    def __setitem__(self, key_t key, size_t value):
+    def __setitem__(self, object key_obj, size_t value):
+        cdef key_t key = key_obj
         with cython.critical_section(self):
             map_set(self.mem, self.c_map, key, <void*>value)
 
-    def __delitem__(self, key_t key):
+    def __delitem__(self, object key_obj):
+        cdef key_t key = key_obj
         with cython.critical_section(self):
             map_clear(self.c_map, key)
 
@@ -97,7 +103,8 @@ cdef class PreshMap:
             filled = self.c_map.filled
         return filled
 
-    def __contains__(self, key_t key):
+    def __contains__(self, object key_obj):
+        cdef key_t key = key_obj
         cdef Result result
         with cython.critical_section(self):
             result = map_get_unless_missing(self.c_map, key)
