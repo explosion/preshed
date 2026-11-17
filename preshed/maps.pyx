@@ -166,9 +166,9 @@ cdef void map_set(Pool mem, MapStruct* map_, key_t key, void* value) except *:
 
 cdef void* map_get(const MapStruct* map_, const key_t key) noexcept nogil:
     if key == EMPTY_KEY:
-        return map_.value_for_empty_key
+        return map_.value_for_empty_key if map_.is_empty_key_set else NULL
     elif key == DELETED_KEY:
-        return map_.value_for_del_key
+        return map_.value_for_del_key if map_.is_del_key_set else NULL
     cdef Cell* cell = _find_cell(map_.cells, map_.length, key)
     return cell.value
 

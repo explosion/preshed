@@ -10,7 +10,12 @@ from Cython.Build import cythonize
 
 
 PACKAGES = ["preshed", "preshed.tests"]
-MOD_NAMES = ["preshed.maps", "preshed.counter", "preshed.bloom"]
+MOD_NAMES = [
+    "preshed.maps",
+    "preshed.counter",
+    "preshed.bloom",
+    "preshed.tests.map_helpers",
+]
 
 
 # By subclassing build_extensions we have the actual compiler that will be used which is really known only after finalize_options
